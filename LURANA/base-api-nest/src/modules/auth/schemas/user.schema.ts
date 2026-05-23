@@ -18,7 +18,11 @@ export class User {
     lowercase: true,
     trim: true,
   })
+<<<<<<< HEAD
   email: string;
+=======
+  email!: string;
+>>>>>>> 45b5da6cbee2c367b805619f9783ea6b8b97f000
 
   @Prop({
     required: false,
@@ -29,14 +33,22 @@ export class User {
   @Prop({
     default: false,
   })
+<<<<<<< HEAD
   isEmailVerified: boolean;
+=======
+  isEmailVerified!: boolean;
+>>>>>>> 45b5da6cbee2c367b805619f9783ea6b8b97f000
 
   @Prop({
     type: [String],
     enum: Object.values(Role),
     default: [Role.USER],
   })
+<<<<<<< HEAD
   roles: Role[];
+=======
+  roles!: Role[];
+>>>>>>> 45b5da6cbee2c367b805619f9783ea6b8b97f000
 
   @Prop({ default: null })
   googleId?: string;

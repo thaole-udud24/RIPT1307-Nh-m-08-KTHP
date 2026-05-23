@@ -1,4 +1,8 @@
+<<<<<<< HEAD
 ﻿export default [
+=======
+export default [
+>>>>>>> 45b5da6cbee2c367b805619f9783ea6b8b97f000
   {
     path: '/auth',
     layout: false,
@@ -28,9 +32,59 @@
       { redirect: '/auth/login' },
     ],
   },
+<<<<<<< HEAD
 
   // ... routes khác shop/admin của bạn
 
   { path: '/', redirect: '/auth/login' },
+=======
+  
+  {
+    path: '/admin',
+    layout: false,
+    component: '@/layouts/AdminLayout',
+    routes: [
+      {
+        path: '/admin/dashboard',
+        component: '@/pages/admin/Dashboard',
+      },
+      {
+        path: '/admin/products',
+        component: '@/pages/admin/Products',
+      },
+      {
+        path: '/admin/categories',
+        component: '@/pages/admin/Categories',
+      },
+      {
+        path: '/admin/skintypes',
+        component: '@/pages/admin/SkinTypes',
+      },
+    ],
+  },
+
+  {
+    path: '/',
+    component: '@/layouts/ShopLayout',
+    layout: false,
+    routes: [
+      { path: '/home', component: '@/pages/shop/Home' },
+      { path: '/about', component: '@/pages/shop/About' },
+      { path: '/products', component: '@/pages/shop/Products' },
+      { path: '/products/:id', component: '@/pages/shop/ProductDetail' },
+      { path: '/productdetail', component: '@/pages/shop/ProductDetail' },
+      { path: '/blog/:id', component: '@/pages/shop/BlogDetail' },
+      { path: '/blog', component: '@/pages/shop/Blog' },
+      { path: '/contact', component: '@/pages/shop/Contact' },
+      { path: '/cart', component: '@/pages/shop/Cart' },
+      { path: '/checkout', component: '@/pages/shop/Checkout' },
+      { path: '/account', component: '@/pages/shop/Account' },
+      { path: '/notifications', component: '@/pages/shop/Notifications' },
+      { path: '/orders', component: '@/pages/shop/Orders' },
+      { path: '/orderdetail', component: '@/pages/shop/OrderDetail' },
+      { path: '/', redirect: '/home' },
+    ],
+  },
+>>>>>>> 45b5da6cbee2c367b805619f9783ea6b8b97f000
   // { component: './404' },
 ];

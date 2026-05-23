@@ -14,12 +14,34 @@ export default {
       success: true,
       message: 'Đăng nhập thành công',
       data: {
+<<<<<<< HEAD
         user: {
           id: 1,
           email,
           name: 'Admin',
         },
+=======
+        user: { id: 1, email, name: 'Admin' },
+>>>>>>> 45b5da6cbee2c367b805619f9783ea6b8b97f000
         access_token: 'fake-token-123',
+      },
+    });
+  }
+
+<<<<<<< HEAD
+  return res.send({
+    success: false,
+    message: 'Sai email hoặc mật khẩu',
+    });
+  },
+=======
+  if (email === 'user@gmail.com' && password === '123456') {
+    return res.send({
+      success: true,
+      message: 'Đăng nhập thành công',
+      data: {
+        user: { id: 2, email, name: 'Khách hàng Lunaria' },
+        access_token: 'fake-user-token-456',
       },
     });
   }
@@ -27,8 +49,9 @@ export default {
   return res.send({
     success: false,
     message: 'Sai email hoặc mật khẩu',
-    });
-  },
+  });
+},
+>>>>>>> 45b5da6cbee2c367b805619f9783ea6b8b97f000
 
   // Register 
 
