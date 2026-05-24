@@ -1,29 +1,52 @@
-import { Switch, Tag } from 'antd';
+import {
+  Switch,
+  Tag,
+} from 'antd';
+
+import {
+  STATUS,
+} from '@/constants/enums';
+
+// =========================
+// TYPES
+// =========================
 
 export type StatusType =
-  | 'ACTIVE'
-  | 'INACTIVE'
+  | STATUS.ACTIVE
+  | STATUS.INACTIVE
   | 'OUT_OF_STOCK'
   | 'DRAFT';
 
 interface StatusTagProps {
-  status: StatusType;
+
+  status:
+    | StatusType
+    | boolean;
 
   editable?: boolean;
 
   onChange?: (
     checked: boolean,
   ) => void;
+
+  activeText?: string;
+
+  inactiveText?: string;
 }
 
+// =========================
+// CONFIG
+// =========================
+
 const STATUS_CONFIG = {
-  ACTIVE: {
-    label: 'Đang bán',
+
+  [STATUS.ACTIVE]: {
+    label: 'Hoạt động',
     color: 'success',
   },
 
-  INACTIVE: {
-    label: 'Ngừng bán',
+  [STATUS.INACTIVE]: {
+    label: 'Ẩn',
     color: 'default',
   },
 
@@ -38,11 +61,35 @@ const STATUS_CONFIG = {
   },
 };
 
+// =========================
+// COMPONENT
+// =========================
+
 export default function StatusTag({
+
   status,
+
   editable = false,
+
   onChange,
+
+  activeText = 'Hoạt động',
+
+  inactiveText = 'Ẩn',
+
 }: StatusTagProps) {
+
+  // =========================
+  // BOOLEAN SUPPORT
+  // =========================
+
+  const normalizedStatus =
+    status === true
+      ? STATUS.ACTIVE
+      : status === false
+      ? STATUS.INACTIVE
+      : status;
+
   // =========================
   // EDITABLE MODE
   // =========================
@@ -50,7 +97,10 @@ export default function StatusTag({
   if (editable) {
     return (
       <Switch
-        checked={status === 'ACTIVE'}
+        checked={
+          normalizedStatus ===
+          STATUS.ACTIVE
+        }
         className="admin-status-switch"
         onChange={onChange}
       />
@@ -62,11 +112,19 @@ export default function StatusTag({
   // =========================
 
   const currentStatus =
-    STATUS_CONFIG[status];
+    STATUS_CONFIG[
+      normalizedStatus
+    ];
 
   return (
     <Tag color={currentStatus.color}>
-      {currentStatus.label}
+      {normalizedStatus ===
+      STATUS.ACTIVE
+        ? activeText
+        : normalizedStatus ===
+          STATUS.INACTIVE
+        ? inactiveText
+        : currentStatus.label}
     </Tag>
   );
 }

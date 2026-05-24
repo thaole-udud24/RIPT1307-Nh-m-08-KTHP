@@ -29,6 +29,13 @@ import ProductDrawer, {
   getProductColumns,
 } from './components/ProductDrawer';
 
+import {
+  getCategories,
+} from '@/services/DanhMuc/categories.api';
+
+import {
+  getSkinTypes,
+} from '@/services/DanhMuc/skinTypes.api';
 
 import {
   initMockProducts,
@@ -68,6 +75,27 @@ export default function ProductsPage() {
   const [pageSize, setPageSize] =
     useState(10);
 
+  const [categories, setCategories] =
+    useState<any[]>([]);
+
+  const [skinTypes, setSkinTypes] =
+    useState<any[]>([]);
+
+  const [selectedCategory, setSelectedCategory] =
+    useState<string>();
+
+  const [selectedSkinType, setSelectedSkinType] =
+    useState<string>();
+
+  const [tempCategory, setTempCategory] =
+    useState<string>();
+
+  const [tempSkinType, setTempSkinType] =
+    useState<string>();
+
+  const [filterOpen, setFilterOpen] =
+    useState(false);
+
   // =========================
   // FETCH PRODUCTS
   // =========================
@@ -89,10 +117,36 @@ export default function ProductsPage() {
     }
   };
 
+  // =========================
+  // FETCH CATEGORY + SKIN TYPE
+  // =========================
+
+  const fetchFilters = async () => {
+    try {
+      const categoryRes =
+        await getCategories();
+
+      const skinTypeRes =
+        await getSkinTypes();
+
+      setCategories(
+        categoryRes.data || [],
+      );
+
+      setSkinTypes(
+        skinTypeRes || [],
+      );
+    } catch (error) {
+      console.log(error);
+    }
+  };
+
   useEffect(() => {
     initMockProducts();
 
     fetchProducts();
+
+    fetchFilters();
   }, []);
 
   useEffect(() => {
@@ -146,16 +200,45 @@ export default function ProductsPage() {
   // =========================
 
   const filteredProducts = useMemo(() => {
-    return products.filter((item) =>
-      (item.name || '')
-        .toLowerCase()
-        .includes(
-          searchText
-          .trim()
-          .toLowerCase(),
-        ),
-    );
-  }, [products, searchText]);
+    let result =
+      products.filter((item) =>
+        (item.name || '')
+          .toLowerCase()
+          .includes(
+            searchText
+              .trim()
+              .toLowerCase(),
+          ),
+      );
+
+    // CATEGORY
+
+    if (selectedCategory) {
+      result = result.filter(
+        (item: any) =>
+          item.categoryId ===
+          selectedCategory,
+      );
+    }
+
+    // SKIN TYPE
+
+    if (selectedSkinType) {
+      result = result.filter(
+        (item: any) =>
+          item.skinTypeIds?.includes(
+            selectedSkinType,
+          ),
+      );
+    }
+
+    return result;
+  }, [
+    products,
+    searchText,
+    selectedCategory,
+    selectedSkinType,
+  ]);
 
   // =========================
   // PAGINATION
@@ -205,14 +288,29 @@ export default function ProductsPage() {
         Tùy chỉnh bộ lọc
       </div>
 
+      {/* CATEGORY */}
+
       <div className="filter-group">
-        <label>Loại sản phẩm</label>
+        <label>
+          Loại sản phẩm
+        </label>
 
         <Select
           placeholder="Chọn loại"
           style={{ width: '100%' }}
+          value={tempCategory}
+          onChange={setTempCategory}
+          allowClear
+          options={categories.map(
+            (item) => ({
+              label: item.name,
+              value: item.id,
+            }),
+          )}
         />
       </div>
+
+      {/* SKIN TYPE */}
 
       <div className="filter-group">
         <label>Loại da</label>
@@ -220,15 +318,50 @@ export default function ProductsPage() {
         <Select
           placeholder="Chọn loại da"
           style={{ width: '100%' }}
+          value={tempSkinType}
+          onChange={setTempSkinType}
+          allowClear
+          options={skinTypes.map(
+            (item) => ({
+              label: item.name,
+              value: item.id,
+            }),
+          )}
         />
       </div>
 
+      {/* ACTIONS */}
+
       <div className="filter-actions">
-        <Button>
+        <Button
+          onClick={() => {
+            setTempCategory(
+              undefined,
+            );
+
+            setTempSkinType(
+              undefined,
+            );
+          }}
+        >
           Đặt lại
         </Button>
 
-        <Button type="primary">
+        <Button
+          type="primary"
+          className="apply-filter-btn"
+          onClick={() => {
+            setSelectedCategory(
+              tempCategory,
+            );
+
+            setSelectedSkinType(
+              tempSkinType,
+            );
+
+            setFilterOpen(false);
+          }}
+        >
           Áp dụng
         </Button>
       </div>
@@ -281,6 +414,9 @@ export default function ProductsPage() {
             content={filterContent}
             trigger="click"
             placement="bottomRight"
+            visible={filterOpen}
+            onVisibleChange={setFilterOpen}
+            overlayClassName="filter-popover"
           >
             <Button
               icon={<FilterOutlined />}

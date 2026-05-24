@@ -256,3 +256,172 @@ export const MOCK_CATEGORIES = [
     active: true,
   },
 ];
+
+export let MOCK_SKIN_TYPES = [
+  {
+    id: 1,
+
+    code: 'DD',
+
+    name: 'Da dầu',
+
+    description:
+      'Da tiết nhiều dầu, dễ nổi mụn',
+
+    active: true,
+  },
+
+  {
+    id: 2,
+
+    code: 'DK',
+
+    name: 'Da khô',
+
+    description:
+      'Da thiếu độ ẩm, dễ bong tróc',
+
+    active: true,
+  },
+
+  {
+    id: 3,
+
+    code: 'DHH',
+
+    name: 'Da hỗn hợp',
+
+    description:
+      'Vùng chữ T đổ dầu, hai bên má khô',
+
+    active: false,
+  },
+
+  {
+    id: 4,
+
+    code: 'DNC',
+
+    name: 'Da nhạy cảm',
+
+    description:
+      'Da dễ kích ứng với mỹ phẩm',
+
+    active: true,
+  },
+];
+
+export default {
+  // =========================
+  // GET SKIN TYPES
+  // =========================
+
+  'GET /api/skin-types': (
+    req: any,
+    res: any,
+  ) => {
+    return res.send(
+      MOCK_SKIN_TYPES,
+    );
+  },
+
+  // =========================
+  // CREATE SKIN TYPE
+  // =========================
+
+  'POST /api/skin-types': (
+    req: any,
+    res: any,
+  ) => {
+    const body = req.body;
+
+    const newItem = {
+      id: Date.now(),
+
+      name: body.name,
+
+      description:
+        body.description,
+
+      active:
+        body.active ?? true,
+    };
+
+    MOCK_SKIN_TYPES.unshift(
+      newItem,
+    );
+
+    return res.send({
+      success: true,
+
+      data: newItem,
+
+      message:
+        'Tạo loại da thành công',
+    });
+  },
+
+  // =========================
+  // UPDATE SKIN TYPE
+  // =========================
+
+  'PUT /api/skin-types/:id': (
+    req: any,
+    res: any,
+  ) => {
+    const { id } =
+      req.params;
+
+    const body = req.body;
+
+    MOCK_SKIN_TYPES =
+      MOCK_SKIN_TYPES.map(
+        (item) => {
+          if (
+            item.id ===
+            Number(id)
+          ) {
+            return {
+              ...item,
+              ...body,
+            };
+          }
+
+          return item;
+        },
+      );
+
+    return res.send({
+      success: true,
+
+      message:
+        'Cập nhật loại da thành công',
+    });
+  },
+
+  // =========================
+  // DELETE SKIN TYPE
+  // =========================
+
+  'DELETE /api/skin-types/:id': (
+    req: any,
+    res: any,
+  ) => {
+    const { id } =
+      req.params;
+
+    MOCK_SKIN_TYPES =
+      MOCK_SKIN_TYPES.filter(
+        (item) =>
+          item.id !==
+          Number(id),
+      );
+
+    return res.send({
+      success: true,
+
+      message:
+        'Xóa loại da thành công',
+    });
+  },
+};
