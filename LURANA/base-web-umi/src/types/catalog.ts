@@ -26,6 +26,10 @@ export interface ProductType {
   active: boolean;
 
   variants?: VariantType[];
+
+  categoryId?: number;
+
+  skinTypeId?: number;
 }
 
 export interface VariantType {
