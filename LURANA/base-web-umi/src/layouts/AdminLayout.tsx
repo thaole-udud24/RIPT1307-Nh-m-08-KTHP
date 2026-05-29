@@ -185,11 +185,19 @@ export default function AdminLayout(props: any) {
             }
 
             // MENU THƯỜNG
+            const isPromotionActive =
+              location.pathname.includes('/admin/promotions') ||
+              location.pathname.includes('/admin/vouchers');
+
             return (
               <div
                 key={item.path}
                 className={`admin-sidebar-item ${
-                  location.pathname === item.path
+                  item.title === 'Ưu đãi'
+                    ? isPromotionActive
+                      ? 'active'
+                      : ''
+                    : location.pathname === item.path
                     ? 'active'
                     : ''
                 }`}
@@ -213,7 +221,14 @@ export default function AdminLayout(props: any) {
             <div
               key={item.path}
               className={`admin-sidebar-item ${
-                location.pathname === item.path
+                item.title === 'Ưu đãi'
+                  ? (
+                      location.pathname.includes('/admin/promotions') ||
+                      location.pathname.includes('/admin/vouchers')
+                    )
+                    ? 'active'
+                    : ''
+                  : location.pathname === item.path
                   ? 'active'
                   : ''
               }`}
@@ -246,4 +261,4 @@ export default function AdminLayout(props: any) {
       </div>
     </div>
   );
-}
+} 

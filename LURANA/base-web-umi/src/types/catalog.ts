@@ -23,6 +23,8 @@ export interface ProductType {
 
   images: string[];
 
+  image?: string;
+
   active: boolean;
 
   variants?: VariantType[];

@@ -15,10 +15,13 @@ export type StatusType =
   | STATUS.ACTIVE
   | STATUS.INACTIVE
   | 'OUT_OF_STOCK'
-  | 'DRAFT';
+  | 'DRAFT'
+  | 'upcoming'
+  | 'active'
+  | 'expired'
+  | 'ended';
 
 interface StatusTagProps {
-
   status:
     | StatusType
     | boolean;
@@ -40,6 +43,10 @@ interface StatusTagProps {
 
 const STATUS_CONFIG = {
 
+  // =========================
+  // COMMON
+  // =========================
+
   [STATUS.ACTIVE]: {
     label: 'Hoạt động',
     color: 'success',
@@ -58,6 +65,30 @@ const STATUS_CONFIG = {
   DRAFT: {
     label: 'Bản nháp',
     color: 'warning',
+  },
+
+  // =========================
+  // PROMOTIONS
+  // =========================
+
+  active: {
+    label: 'Đang diễn ra',
+    color: 'success',
+  },
+
+  upcoming: {
+    label: 'Sắp diễn ra',
+    color: 'processing',
+  },
+
+  ended: {
+    label: 'Đã kết thúc',
+    color: 'default',
+  },
+
+  expired: {
+    label: 'Đã hết hạn',
+    color: 'error',
   },
 };
 
@@ -94,7 +125,13 @@ export default function StatusTag({
   // EDITABLE MODE
   // =========================
 
-  if (editable) {
+  if (
+    editable &&
+    (
+      normalizedStatus === STATUS.ACTIVE ||
+      normalizedStatus === STATUS.INACTIVE
+    )
+  ) {
     return (
       <Switch
         checked={
@@ -115,6 +152,10 @@ export default function StatusTag({
     STATUS_CONFIG[
       normalizedStatus
     ];
+
+  if (!currentStatus) {
+    return <Tag>{status}</Tag>;
+  }
 
   return (
     <Tag color={currentStatus.color}>

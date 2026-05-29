@@ -8,6 +8,7 @@ import {
   Button,
   Checkbox,
   Col,
+  DatePicker,
   Form,
   Input,
   InputNumber,
@@ -17,9 +18,8 @@ import {
   Space,
   Table,
   Tag,
-  message,
-  DatePicker,
   TimePicker,
+  message,
 } from 'antd';
 
 import {
@@ -35,50 +35,50 @@ import type {
 import dayjs from 'dayjs';
 
 import type {
-  Promotion,
-  CreatePromotionPayload,
-  PromotionPreviewProduct,
-} from '@/types/promotion';
-
-import type {
   ProductType,
 } from '@/types/catalog';
 
+import type {
+  Voucher,
+  CreateVoucherPayload,
+  VoucherPreviewProduct,
+} from '@/types/voucher';
+
 import {
-  createPromotion,
-  updatePromotion,
-  getPromotions,
-} from '@/services/UuDai/promotions.api';
+  createVoucher,
+  getVouchers,
+  updateVoucher,
+} from '@/services/UuDai/vouchers.api';
 
 import {
   getAdminProducts,
 } from '@/services/SanPham/products.api';
 
 import {
-  buildPromotionPayload,
-  buildPromotionPreviewProducts,
-  getBlockedProductIds,
-  getPromotionLocks,
-  validatePromotionConflict,
+  buildVoucherPayload,
+  buildVoucherPreviewProducts,
+  getBlockedVoucherProductIds,
+  getVoucherLocks,
   validateVoucherCode,
-} from '@/utils/promotion';
+  validateVoucherConflict,
+} from '@/utils/voucher';
 
-interface PromotionFormProps {
+interface VoucherFormProps {
   open: boolean;
 
-  promotion?: Promotion | null;
+  voucher?: Voucher | null;
 
   onCancel: () => void;
 
   onSuccess: () => void;
 }
 
-export default function PromotionForm({
+export default function VoucherForm({
   open,
-  promotion,
+  voucher,
   onCancel,
   onSuccess,
-}: PromotionFormProps) {
+}: VoucherFormProps) {
 
   // =========================
   // FORM
@@ -97,8 +97,8 @@ export default function PromotionForm({
   const [products, setProducts] =
     useState<ProductType[]>([]);
 
-  const [promotions, setPromotions] =
-    useState<Promotion[]>([]);
+  const [vouchers, setVouchers] =
+    useState<Voucher[]>([]);
 
   const [
     openProductModal,
@@ -114,7 +114,7 @@ export default function PromotionForm({
     useState('');
 
   // =========================
-  // WATCH FORM
+  // WATCH
   // =========================
 
   const applyType =
@@ -148,18 +148,18 @@ export default function PromotionForm({
 
           const [
             productsRes,
-            promotionsRes,
+            vouchersRes,
           ] = await Promise.all([
             getAdminProducts(),
-            getPromotions(),
+            getVouchers(),
           ]);
 
           setProducts(
             productsRes.data || [],
           );
 
-          setPromotions(
-            promotionsRes.data || [],
+          setVouchers(
+            vouchersRes.data || [],
           );
 
         } catch (error) {
@@ -184,12 +184,17 @@ export default function PromotionForm({
       return;
     }
 
-    if (!promotion) {
+    if (!voucher) {
 
       form.resetFields();
 
       form.setFieldsValue({
         applyType: 'specific',
+
+        customerScope:
+          'all_customers',
+
+        repeatType: 'none',
 
         discountPercent: 0,
       });
@@ -200,112 +205,103 @@ export default function PromotionForm({
     }
 
     form.setFieldsValue({
-      name: promotion.name,
+      name: voucher.name,
 
-      code: promotion.code,
+      code: voucher.code,
 
       applyType:
-        promotion.applyType,
-
-      discountPercent:
-        promotion.discountPercent,
+        voucher.applyType,
 
       customerScope:
-        promotion.customerScope,
+        voucher.customerScope,
 
       repeatType:
-        promotion.repeatType,
+        voucher.repeatType,
+
+      discountPercent:
+        voucher.discountPercent,
 
       startDate:
         dayjs(
-          promotion.startDate,
+          voucher.startDate,
         ),
 
       endDate:
         dayjs(
-          promotion.endDate,
+          voucher.endDate,
         ),
 
       goldenHourStart:
-        promotion.goldenHourStart
+        voucher.goldenHourStart
           ? dayjs(
-              promotion.goldenHourStart,
+              voucher.goldenHourStart,
               'HH:mm',
             )
           : null,
 
       goldenHourEnd:
-        promotion.goldenHourEnd
+        voucher.goldenHourEnd
           ? dayjs(
-              promotion.goldenHourEnd,
+              voucher.goldenHourEnd,
               'HH:mm',
             )
           : null,
     });
 
     setSelectedProductIds([
-      ...(promotion.productIds || []),
+      ...(voucher.productIds ||
+        []),
     ]);
 
   }, [
     open,
-    promotion,
+    voucher,
     form,
   ]);
 
   // =========================
-  // APPLY TYPE AUTO FLOW
+  // APPLY TYPE FLOW
   // =========================
 
   useEffect(() => {
 
     if (applyType === 'all') {
+
       setSelectedProductIds([]);
+
       return;
     }
 
     if (
-      promotion &&
-      promotion.applyType !==
+      voucher &&
+      voucher.applyType !==
         'specific'
     ) {
+
       setSelectedProductIds([]);
     }
 
   }, [
     applyType,
-    products,
-    promotion,
+    voucher,
   ]);
 
-
   // =========================
-  // BLOCKED PRODUCTS
+  // LOCKS
   // =========================
 
   const blockedProductIds =
-    getBlockedProductIds(
-      promotions,
-      promotion?.id,
-  );
-
-  // const hasAllPromotionBlocked =
-  //   hasBlockedAllProducts(
-  //     promotions,
-  //     promotion?.id,
-  //   );
-
-  // =========================
-  // APPLY TYPE LOCK
-  // =========================
+    getBlockedVoucherProductIds(
+      vouchers,
+      voucher?.id,
+    );
 
   const {
     disableAllType,
     disableSpecificType,
-    hasGlobalLock,
-  } = getPromotionLocks(
-    promotions,
-    promotion?.id,
+  } = getVoucherLocks(
+    vouchers,
+    voucher?.id,
   );
 
   // =========================
@@ -335,32 +331,15 @@ export default function PromotionForm({
 
   const previewProducts =
     useMemo<
-      PromotionPreviewProduct[]
+      VoucherPreviewProduct[]
     >(() => {
 
-      if (
-        applyType === 'specific'
-      ) {
-
-        return buildPromotionPreviewProducts({
-          applyType,
-
-          products,
-
-          selectedProductIds: [
-            ...selectedProductIds,
-          ],
-
-          discountPercent,
-        });
-      }
-
-      return buildPromotionPreviewProducts({
+      return buildVoucherPreviewProducts({
         applyType,
 
-        products: [...products],
+        products,
 
-        selectedProductIds: [],
+        selectedProductIds,
 
         discountPercent,
       });
@@ -373,7 +352,7 @@ export default function PromotionForm({
     ]);
 
   // =========================
-  // SELECT PRODUCT
+  // TOGGLE PRODUCT
   // =========================
 
   const handleToggleProduct =
@@ -388,7 +367,9 @@ export default function PromotionForm({
           (prev) => {
 
             if (
-              prev.includes(productId)
+              prev.includes(
+                productId,
+              )
             ) {
               return prev;
             }
@@ -404,9 +385,7 @@ export default function PromotionForm({
       }
 
       setSelectedProductIds(
-        (
-          prev,
-        ) =>
+        (prev) =>
           prev.filter(
             (id) =>
               id !== productId,
@@ -415,20 +394,13 @@ export default function PromotionForm({
     };
 
   // =========================
-  // REMOVE PREVIEW PRODUCT
+  // REMOVE PRODUCT
   // =========================
 
-  const handleRemovePreviewProduct =
+  const handleRemoveProduct =
     (
       productId: number,
     ) => {
-
-      if (
-        applyType !==
-        'specific'
-      ) {
-        return;
-      }
 
       setSelectedProductIds(
         (prev) =>
@@ -452,8 +424,8 @@ export default function PromotionForm({
 
         setLoading(true);
 
-        const payload: CreatePromotionPayload =
-          buildPromotionPayload({
+        const payload: CreateVoucherPayload =
+          buildVoucherPayload({
             values,
 
             applyType,
@@ -463,10 +435,10 @@ export default function PromotionForm({
           });
 
         const validation =
-          validatePromotionConflict(
-            promotions,
+          validateVoucherConflict(
+            vouchers,
             payload,
-            promotion?.id,
+            voucher?.id,
           );
 
         if (
@@ -494,12 +466,12 @@ export default function PromotionForm({
         }
 
         const response =
-          promotion
-            ? await updatePromotion(
-                promotion.id,
+          voucher
+            ? await updateVoucher(
+                voucher.id,
                 payload,
               )
-            : await createPromotion(
+            : await createVoucher(
                 payload,
               );
 
@@ -515,9 +487,9 @@ export default function PromotionForm({
         }
 
         message.success(
-          promotion
-            ? 'Cập nhật ưu đãi thành công'
-            : 'Tạo ưu đãi thành công',
+          voucher
+            ? 'Cập nhật voucher thành công'
+            : 'Tạo voucher thành công',
         );
 
         form.resetFields();
@@ -529,7 +501,7 @@ export default function PromotionForm({
       } catch (error) {
 
         message.error(
-          'Không thể lưu ưu đãi',
+          'Không thể lưu voucher',
         );
 
       } finally {
@@ -542,7 +514,7 @@ export default function PromotionForm({
   // PREVIEW TABLE
   // =========================
 
-  const previewColumns: ColumnsType<PromotionPreviewProduct> =
+  const previewColumns: ColumnsType<VoucherPreviewProduct> =
     [
       {
         title: 'Sản phẩm',
@@ -580,14 +552,15 @@ export default function PromotionForm({
       },
 
       {
-        title: 'Giảm giá',
+        title: 'Voucher',
 
         render: () =>
           `${discountPercent}%`,
       },
 
       {
-        title: 'Giá sau giảm',
+        title:
+          'Giá sau giảm',
 
         render: (
           _,
@@ -613,7 +586,7 @@ export default function PromotionForm({
 
               render: (
                 _: any,
-                record: PromotionPreviewProduct,
+                record: VoucherPreviewProduct,
               ) => (
 
                 <Button
@@ -623,7 +596,7 @@ export default function PromotionForm({
                     <CloseOutlined />
                   }
                   onClick={() =>
-                    handleRemovePreviewProduct(
+                    handleRemoveProduct(
                       record.id,
                     )
                   }
@@ -720,7 +693,8 @@ export default function PromotionForm({
       },
 
       {
-        title: 'Trạng thái',
+        title:
+          'Trạng thái',
 
         render: (
           _,
@@ -746,7 +720,7 @@ export default function PromotionForm({
 
           return (
             <Tag color="red">
-              Đang có ưu đãi
+              Đang có voucher
             </Tag>
           );
         },
@@ -768,13 +742,13 @@ export default function PromotionForm({
         <div className="category-modal-header">
 
           <div className="category-modal-title">
-            {promotion
-              ? 'Cập nhật mã giảm giá'
-              : 'Thêm mã giảm giá'}
+            {voucher
+              ? 'Cập nhật voucher'
+              : 'Thêm voucher'}
           </div>
 
           <div className="category-modal-subtitle">
-            Thiết lập chương trình ưu đãi
+            Thiết lập mã giảm giá
           </div>
         </div>
 
@@ -813,16 +787,17 @@ export default function PromotionForm({
                 <Col span={12}>
 
                   <Form.Item
-                    label="Tên ưu đãi"
+                    label="Tên Voucher"
                     name="name"
                     rules={[
                       {
                         required: true,
                         message:
-                          'Vui lòng nhập tên ưu đãi',
+                          'Vui lòng nhập tên voucher',
                       },
                     ]}
                   >
+
                     <Input />
                   </Form.Item>
                 </Col>
@@ -857,7 +832,7 @@ export default function PromotionForm({
 
                             return Promise.reject(
                               new Error(
-                                'Code không được chứa khoảng trắng, dấu tiếng Việt hoặc ký tự đặc biệt',
+                                'Code không được chứa khoảng trắng hoặc ký tự đặc biệt',
                               ),
                             );
                           }
@@ -868,7 +843,7 @@ export default function PromotionForm({
                     ]}
                   >
 
-                    <Input/>
+                    <Input />
                   </Form.Item>
                 </Col>
               </Row>
@@ -876,13 +851,6 @@ export default function PromotionForm({
               <Form.Item
                 label="Phạm vi khách hàng"
                 name="customerScope"
-                rules={[
-                  {
-                    required: true,
-                    message:
-                      'Vui lòng chọn phạm vi khách hàng',
-                  },
-                ]}
               >
 
                 <Select
@@ -890,6 +858,7 @@ export default function PromotionForm({
                     {
                       label:
                         'Tất cả khách hàng',
+
                       value:
                         'all_customers',
                     },
@@ -897,6 +866,7 @@ export default function PromotionForm({
                     {
                       label:
                         'Khách hàng mới',
+
                       value:
                         'new_customers',
                     },
@@ -904,6 +874,7 @@ export default function PromotionForm({
                     {
                       label:
                         'Khách hàng VIP',
+
                       value:
                         'vip_customers',
                     },
@@ -913,10 +884,12 @@ export default function PromotionForm({
             </Col>
           </Row>
 
+          {/* TIME */}
+
           <Row
             gutter={24}
             style={{
-              marginTop: 30,
+              marginTop: 32,
             }}
           >
 
@@ -1020,6 +993,7 @@ export default function PromotionForm({
                         {
                           label:
                             'Không lặp',
+
                           value:
                             'none',
                         },
@@ -1027,6 +1001,7 @@ export default function PromotionForm({
                         {
                           label:
                             'Hàng ngày',
+
                           value:
                             'daily',
                         },
@@ -1034,6 +1009,7 @@ export default function PromotionForm({
                         {
                           label:
                             'Hàng tuần',
+
                           value:
                             'weekly',
                         },
@@ -1041,23 +1017,22 @@ export default function PromotionForm({
                     />
                   </Form.Item>
                 </Col>
-
               </Row>
             </Col>
           </Row>
 
-          {/* APPLY TYPE */}
+          {/* APPLY */}
 
           <Row
             gutter={24}
             style={{
-              marginTop: 30,
+              marginTop: 32,
             }}
           >
 
             <Col span={8}>
               <h3>
-                Hình thức giảm giá
+                Hình thức áp dụng
               </h3>
             </Col>
 
@@ -1086,7 +1061,7 @@ export default function PromotionForm({
                       })
                     }
                   >
-                    Tất cả sản phẩm
+                    Toàn bộ sản phẩm
                   </Button>
 
                   <Button
@@ -1108,12 +1083,11 @@ export default function PromotionForm({
                   >
                     Sản phẩm cụ thể
                   </Button>
-
                 </Space>
               </Form.Item>
 
               <Form.Item
-                label="Thiết lập giảm giá"
+                label="Phần trăm giảm"
                 name="discountPercent"
                 rules={[
                   {
@@ -1121,12 +1095,13 @@ export default function PromotionForm({
                     message:
                       'Vui lòng nhập phần trăm giảm',
                   },
+
                   {
                     type: 'number',
                     min: 1,
                     max: 100,
                     message:
-                      'Giảm giá phải từ 1 - 100%',
+                      'Giảm giá từ 1 - 100%',
                   },
                 ]}
               >
@@ -1139,7 +1114,6 @@ export default function PromotionForm({
                     width: '100%',
                   }}
                 />
-
               </Form.Item>
             </Col>
           </Row>
@@ -1191,7 +1165,7 @@ export default function PromotionForm({
 
           <div
             style={{
-              marginTop: 32,
+              marginTop: 24,
             }}
           >
 
@@ -1206,7 +1180,6 @@ export default function PromotionForm({
               }
               className="admin-table"
             />
-
           </div>
 
           {/* FOOTER */}
@@ -1255,7 +1228,7 @@ export default function PromotionForm({
           </div>
 
           <div className="category-modal-subtitle">
-            Chọn sản phẩm áp dụng giảm giá
+            Chọn sản phẩm áp dụng voucher
           </div>
         </div>
 
