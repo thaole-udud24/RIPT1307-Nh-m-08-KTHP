@@ -41,8 +41,6 @@ const {
   Text,
 } = Typography;
 
-const [saving, setSaving] = useState(false);
-
 interface AccountSecurityProps {
   accountInfo: AccountInfo;
 
@@ -54,8 +52,8 @@ interface AccountSecurityProps {
 
   onUpdatePreferences: (
     values: UserPreferences,
-  ) => void;
-
+  ) => Promise<void>;
+  
   onUpdateAccount: (
     values: UpdateAccountInfoPayload,
   ) => Promise<void>;
@@ -69,12 +67,19 @@ const AccountSecurity = ({
   onUpdateAccount,
 }: AccountSecurityProps) => {
 
+  const [saving, setSaving] = useState(false);
+
   const [isEditing, setIsEditing] = useState(false);
 
   const [avatarUrl, setAvatarUrl] =
     useState(
       accountInfo.avatar || '',
     );
+
+  const [
+    localPreferences,
+    setLocalPreferences,
+  ] = useState(preferences);
 
   const [form] = Form.useForm();
 
@@ -102,8 +107,13 @@ const AccountSecurity = ({
   };
 
   useEffect(() => {
+
     setAvatarUrl(
       accountInfo.avatar || '',
+    );
+
+    setLocalPreferences(
+      preferences,
     );
 
     form.setFieldsValue({
@@ -119,8 +129,29 @@ const AccountSecurity = ({
 
   }, [
     accountInfo,
+    preferences,
     form,
   ]);
+
+  const handlePreferenceChange =
+    async (
+      values: Partial<UserPreferences>,
+    ) => {
+
+      const updatedPreferences =
+        {
+          ...localPreferences,
+          ...values,
+        };
+
+      setLocalPreferences(
+        updatedPreferences,
+      );
+
+      await onUpdatePreferences(
+        updatedPreferences,
+      );
+    };
 
   const accountTab = (
 
@@ -394,7 +425,7 @@ const AccountSecurity = ({
 
               <Select
                 value={
-                  preferences.language
+                  localPreferences.language
                 }
                 options={[
                   {
@@ -404,6 +435,16 @@ const AccountSecurity = ({
                       'vi',
                   },
                 ]}
+                onChange={(
+                  value,
+                ) =>
+                  handlePreferenceChange(
+                    {
+                      language:
+                        value,
+                    },
+                  )
+                }
               />
 
             </div>
@@ -416,7 +457,25 @@ const AccountSecurity = ({
 
               <Select
                 value={
-                  preferences.timezone
+                  localPreferences.timezone
+                }
+                options={[
+                  {
+                    label:
+                      'Asia/Ho_Chi_Minh',
+                    value:
+                      'Asia/Ho_Chi_Minh',
+                  },
+                ]}
+                onChange={(
+                  value,
+                ) =>
+                  handlePreferenceChange(
+                    {
+                      timezone:
+                        value,
+                    },
+                  )
                 }
               />
 
@@ -430,7 +489,17 @@ const AccountSecurity = ({
 
               <Radio.Group
                 value={
-                  preferences.theme
+                  localPreferences.theme
+                }
+                onChange={(
+                  e,
+                ) =>
+                  handlePreferenceChange(
+                    {
+                      theme:
+                        e.target.value,
+                    },
+                  )
                 }
               >
 
@@ -467,7 +536,17 @@ const AccountSecurity = ({
 
               <Switch
                 checked={
-                  preferences.emailNotification
+                  localPreferences.emailNotification
+                }
+                onChange={(
+                  checked,
+                ) =>
+                  handlePreferenceChange(
+                    {
+                      emailNotification:
+                        checked,
+                    },
+                  )
                 }
               />
 
@@ -481,7 +560,17 @@ const AccountSecurity = ({
 
               <Switch
                 checked={
-                  preferences.showHelp
+                  localPreferences.showHelp
+                }
+                onChange={(
+                  checked,
+                ) =>
+                  handlePreferenceChange(
+                    {
+                      showHelp:
+                        checked,
+                    },
+                  )
                 }
               />
 
@@ -495,7 +584,17 @@ const AccountSecurity = ({
 
               <Switch
                 checked={
-                  preferences.autoCollapseMenu
+                  localPreferences.autoCollapseMenu
+                }
+                onChange={(
+                  checked,
+                ) =>
+                  handlePreferenceChange(
+                    {
+                      autoCollapseMenu:
+                        checked,
+                    },
+                  )
                 }
               />
 

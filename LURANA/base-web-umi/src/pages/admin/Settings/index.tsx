@@ -97,10 +97,12 @@ const SettingsPage = () => {
   // FETCH DATA
   // =========================
 
-  const fetchData =
+  const loadSettings =
     async () => {
+
+      setLoading(true);
+
       try {
-        setLoading(true);
 
         const [
           storeRes,
@@ -113,40 +115,39 @@ const SettingsPage = () => {
             getPreferences(),
           ]);
 
-        if (
-          storeRes.success
-        ) {
+        if (storeRes.success) {
           setStoreInfo(
             storeRes.data,
           );
         }
 
-        if (
-          accountRes.success
-        ) {
+        if (accountRes.success) {
           setAccountInfo(
             accountRes.data,
           );
         }
 
-        if (
-          preferencesRes.success
-        ) {
+        if (preferencesRes.success) {
           setPreferences(
             preferencesRes.data,
           );
         }
-      } catch (error) {
+
+      } catch {
+
         message.error(
           'Không thể tải dữ liệu cài đặt',
         );
+
       } finally {
+
         setLoading(false);
+
       }
     };
 
   useEffect(() => {
-    fetchData();
+    loadSettings();
   }, []);
 
   // =========================
@@ -157,38 +158,32 @@ const SettingsPage = () => {
     async (
       values: StoreInfo,
     ) => {
-      try {
-        const response =
-          await updateStoreInfo(
-            values,
-          );
 
-        if (
-          !response.success
-        ) {
-          message.error(
-            response.message,
-          );
-
-          return;
-        }
-
-        setStoreInfo(
-          response.data,
+      const response =
+        await updateStoreInfo(
+          values,
         );
 
-        setIsEditingStore(
-          false,
-        );
+      if (!response.success) {
 
-        message.success(
-          'Cập nhật thông tin cửa hàng thành công',
-        );
-      } catch (error) {
         message.error(
-          'Không thể cập nhật thông tin cửa hàng',
+          response.message,
         );
+
+        return;
       }
+
+      setStoreInfo(
+        response.data,
+      );
+
+      setIsEditingStore(
+        false,
+      );
+
+      message.success(
+        response.message,
+      );
     };
 
   // =========================
@@ -199,30 +194,24 @@ const SettingsPage = () => {
     async (
       payload: ChangePasswordPayload,
     ) => {
-      try {
-        const response =
-          await changePassword(
-            payload,
-          );
 
-        if (
-          !response.success
-        ) {
-          message.error(
-            response.message,
-          );
-
-          return;
-        }
-
-        message.success(
-          'Đổi mật khẩu thành công',
+      const response =
+        await changePassword(
+          payload,
         );
-      } catch (error) {
+
+      if (!response.success) {
+
         message.error(
-          'Không thể đổi mật khẩu',
+          response.message,
         );
+
+        return;
       }
+
+      message.success(
+        response.message,
+      );
     };
 
   // =========================
@@ -233,15 +222,42 @@ const SettingsPage = () => {
     async (
       values: UserPreferences,
     ) => {
-      try {
+
+      const response =
+        await updatePreferences(
+          values,
+        );
+
+      if (!response.success) {
+
+        message.error(
+          response.message,
+        );
+
+        return;
+      }
+
+      setPreferences(
+        response.data,
+      );
+
+      message.success(
+        response.message,
+      );
+    };
+
+    const handleUpdateAccount =
+      async (
+        values: UpdateAccountInfoPayload,
+      ) => {
+
         const response =
-          await updatePreferences(
+          await updateAccountInfo(
             values,
           );
 
-        if (
-          !response.success
-        ) {
+        if (!response.success) {
+
           message.error(
             response.message,
           );
@@ -249,49 +265,14 @@ const SettingsPage = () => {
           return;
         }
 
-        setPreferences(
+        setAccountInfo(
           response.data,
         );
 
         message.success(
-          'Cập nhật tùy chọn thành công',
+          response.message,
         );
-      } catch (error) {
-        message.error(
-          'Không thể cập nhật tùy chọn',
-        );
-      }
-    };
-
-    const handleUpdateAccount = async (
-        values: UpdateAccountInfoPayload,
-        ) => {
-        try {
-            const response =
-            await updateAccountInfo(
-                values,
-            );
-
-            if (!response.success) {
-            message.error(
-                response.message,
-            );
-            return;
-            }
-
-            setAccountInfo(
-            response.data,
-            );
-
-            message.success(
-            'Cập nhật tài khoản thành công',
-            );
-        } catch {
-            message.error(
-            'Không thể cập nhật tài khoản',
-            );
-        }
-    };
+      };
 
   // =========================
   // LOADING

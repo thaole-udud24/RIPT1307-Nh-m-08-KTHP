@@ -6,6 +6,11 @@ import {
   Typography,
 } from 'antd';
 
+import {
+  CheckCircleFilled,
+  CloseCircleOutlined,
+} from '@ant-design/icons';
+
 import type {
   ChangePasswordPayload,
 } from '@/types/settings';
@@ -34,6 +39,52 @@ const ChangePasswordTab = ({
 
   const [form] =
     Form.useForm();
+
+  const password =
+    Form.useWatch(
+      'newPassword',
+      form,
+    ) || '';
+
+  const requirements = [
+    {
+      label:
+        'Tối thiểu 8 ký tự',
+      valid:
+        password.length >= 8,
+    },
+    {
+      label:
+        'Ít nhất 1 chữ hoa',
+      valid:
+        /[A-Z]/.test(password),
+    },
+    {
+      label:
+        'Ít nhất 1 chữ thường',
+      valid:
+        /[a-z]/.test(password),
+    },
+    {
+      label:
+        'Ít nhất 1 số',
+      valid:
+        /\d/.test(password),
+    },
+    {
+      label:
+        'Ít nhất 1 ký tự đặc biệt',
+      valid:
+        /[!@#$%^&*(),.?":{}|<>]/.test(
+          password,
+        ),
+    },
+  ];
+
+  const isPasswordValid =
+    requirements.every(
+      (item) => item.valid,
+    );
 
   // =========================
   // SUBMIT
@@ -65,28 +116,17 @@ const ChangePasswordTab = ({
     };
 
   return (
+  <div className="change-password-page">
+    {/* LEFT */}
 
-    <div className="change-password-form">
-
-      <Text type="secondary">
-
-        Thay đổi mật khẩu tài khoản quản trị để tăng cường bảo mật hệ thống.
-
-      </Text>
+    <div className="password-form-card">
+      <h3>Đổi mật khẩu</h3>
 
       <Form
         form={form}
         layout="vertical"
-        style={{
-          marginTop: 24,
-        }}
-        onFinish={
-          handleFinish
-        }
+        onFinish={handleFinish}
       >
-
-        {/* CURRENT PASSWORD */}
-
         <Form.Item
           label="Mật khẩu hiện tại"
           name="currentPassword"
@@ -98,14 +138,8 @@ const ChangePasswordTab = ({
             },
           ]}
         >
-
-          <Input.Password
-            placeholder="Nhập mật khẩu hiện tại"
-          />
-
+          <Input.Password />
         </Form.Item>
-
-        {/* NEW PASSWORD */}
 
         <Form.Item
           label="Mật khẩu mới"
@@ -118,20 +152,34 @@ const ChangePasswordTab = ({
             },
 
             {
-              min: 6,
-              message:
-                'Mật khẩu phải có ít nhất 6 ký tự',
+              validator(_, value) {
+
+                if (!value) {
+                  return Promise.resolve();
+                }
+
+                const isValid =
+                  value.length >= 8 &&
+                  /[A-Z]/.test(value) &&
+                  /[a-z]/.test(value) &&
+                  /\d/.test(value) &&
+                  /[!@#$%^&*(),.?":{}|<>]/.test(
+                    value,
+                  );
+
+                return isValid
+                  ? Promise.resolve()
+                  : Promise.reject(
+                      new Error(
+                        'Mật khẩu chưa đáp ứng đủ yêu cầu',
+                      ),
+                    );
+              },
             },
           ]}
         >
-
-          <Input.Password
-            placeholder="Nhập mật khẩu mới"
-          />
-
+          <Input.Password />
         </Form.Item>
-
-        {/* CONFIRM PASSWORD */}
 
         <Form.Item
           label="Xác nhận mật khẩu mới"
@@ -146,21 +194,14 @@ const ChangePasswordTab = ({
                 'Vui lòng xác nhận mật khẩu',
             },
 
-            ({
-              getFieldValue,
-            }) => ({
-              validator(
-                _,
-                value,
-              ) {
-
+            ({ getFieldValue }) => ({
+              validator(_, value) {
                 if (
                   !value ||
                   getFieldValue(
                     'newPassword',
                   ) === value
                 ) {
-
                   return Promise.resolve();
                 }
 
@@ -173,42 +214,68 @@ const ChangePasswordTab = ({
             }),
           ]}
         >
-
-          <Input.Password
-            placeholder="Nhập lại mật khẩu mới"
-          />
-
+          <Input.Password />
         </Form.Item>
 
-        {/* ACTIONS */}
-
-        <div className="change-password-actions">
-
-          <Space>
-
-            <Button
-              onClick={() =>
-                form.resetFields()
-              }
-            >
-              Làm mới
-            </Button>
-
-            <Button
-              type="primary"
-              htmlType="submit"
-            >
-              Cập nhật mật khẩu
-            </Button>
-
-          </Space>
-
-        </div>
-
+        <Button
+          block
+          size="large"
+          type="primary"
+          htmlType="submit"
+          disabled={!isPasswordValid}
+        >
+          Cập nhật mật khẩu
+        </Button>
       </Form>
-
     </div>
-  );
+
+    {/* RIGHT */}
+
+    <div className="password-info">
+      <div className="security-card">
+        <h3>Yêu cầu mật khẩu</h3>
+
+        <ul className="password-requirements">
+          {requirements.map(
+            (item) => (
+              <li
+                key={item.label}
+                className={`password-requirement ${
+                  item.valid
+                    ? 'valid'
+                    : 'invalid'
+                }`}
+              >
+                <span className="requirement-icon">
+                  {item.valid ? (
+                    <CheckCircleFilled />
+                  ) : (
+                    <CloseCircleOutlined />
+                  )}
+                </span>
+
+                <span>
+                  {item.label}
+                </span>
+              </li>
+            ),
+          )}
+        </ul>
+
+      </div>
+
+      <div className="security-card">
+        <h3>Mẹo bảo mật</h3>
+
+        <p>
+          Không sử dụng thông tin cá
+          nhân dễ đoán như ngày sinh,
+          số điện thoại hoặc tên.
+        </p>
+      </div>
+    </div>
+  </div>
+);
 };
 
 export default ChangePasswordTab;
