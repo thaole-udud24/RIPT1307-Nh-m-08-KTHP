@@ -5,12 +5,7 @@ import styles from './OrderTracking.less';
 export default function OrderTracking() {
   return (
     <div className={styles.container}>
-      <img 
-        src={bgImage} 
-        alt="Order Tracking Background" 
-        className={styles.bgImage} 
-      />
-
+      <img src={bgImage} alt="Background" className={styles.bgImage} />
       <div className={styles.overlayContent}>
         <h3 className={styles.title}>Theo dõi đơn hàng</h3>
         <p className={styles.subtitle}>Nhập mã đơn hàng của bạn và tìm kiếm</p>

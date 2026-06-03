@@ -1,17 +1,21 @@
-.container {
-  background-color: #F0E6FF;
-  border-radius: 20px;
-  padding: 24px;
-  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
-  height: 100%;
+@keyframes slideInRight {
+  from { opacity: 0; transform: translateX(-20px); }
+  to { opacity: 1; transform: translateX(0); }
+}
 
-  h3 {
-    font-weight: 600;
-    color: #1f2937;
-    font-size: 18px;
-    margin-bottom: 16px;
-    margin-top: 0;
-  }
+.container {
+  background-color: #F8F2FF;
+  border-radius: 10px;
+  padding: 24px;
+  height: 100%;
+}
+
+.title {
+  font-weight: 600;
+  color: #1f2937;
+  font-size: 18px;
+  margin-top: 0;
+  margin-bottom: 20px;
 }
 
 .list {
@@ -23,48 +27,57 @@
 .item {
   background-color: white;
   padding: 12px;
-  border-radius: 12px;
+  border-radius: 10px;
   display: flex;
   gap: 12px;
   align-items: center;
   position: relative;
-  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
   cursor: pointer;
-  transition: box-shadow 0.2s;
+  opacity: 0;
+  animation: slideInRight 0.5s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+  animation-delay: calc(0.3s + var(--delay, 0s));
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 
   &:hover {
-    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    transform: translateX(8px);
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.06);
+    
+    .arrow {
+      color: #F88A6E;
+      transform: translateX(4px);
+    }
   }
 
   img {
-    width: 40px;
-    height: 40px;
-    border-radius: 6px;
+    width: 48px;
+    height: 48px;
+    border-radius: 8px;
     object-fit: cover;
     background-color: #f3f4f6;
-    border: 1px solid #f9fafb;
   }
 }
 
 .info {
   flex: 1;
+  min-width: 0;
 
   .name {
-    font-size: 12px;
+    font-size: 13px;
     font-weight: 600;
-    color: #1f2937;
+    color: #374151;
     margin: 0;
     display: -webkit-box;
     -webkit-line-clamp: 1;
-    line-clamp: 1; /* Đã thêm dòng này để fix cảnh báo tương thích */
+    line-clamp: 1;
     -webkit-box-orient: vertical;
     overflow: hidden;
   }
 
   .qty {
-    font-size: 10px;
-    color: #9ca3af;
-    margin: 2px 0 4px 0;
+    font-size: 11px;
+    color: #6b7280;
+    margin: 4px 0;
   }
 }
 
@@ -74,20 +87,21 @@
   align-items: center;
 
   .price {
-    font-size: 12px;
+    font-size: 13px;
     font-weight: 700;
-    color: #1f2937;
+    color: #F88A6E;
   }
 
   .time {
-    font-size: 10px;
+    font-size: 11px;
     color: #9ca3af;
   }
 }
 
 .arrow {
   position: absolute;
-  top: 8px;
-  right: 8px;
-  color: #f9a8d4;
+  top: 12px;
+  right: 12px;
+  color: #d1d5db;
+  transition: all 0.3s ease;
 }

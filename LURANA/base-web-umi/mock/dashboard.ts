@@ -15,35 +15,43 @@ export default {
           recentOrders: [
             {
               id: "ORD-1",
-              productName: "CC+ Cream Illumination with SPF 50+",
-              quantity: 3,
-              price: 500000,
+              productName: "Serum Phục Hồi Da B5 La Roche-Posay",
+              quantity: 2,
+              price: 420000,
               createdAt: "23:00 12/01/2026",
-              imageUrl: "https://picsum.photos/id/21/200/200"
+              imageUrl: "https://picsum.photos/id/10/48/48"
             },
             {
               id: "ORD-2",
-              productName: "CC+ Cream Illumination with SPF 50+",
-              quantity: 3,
-              price: 500000,
-              createdAt: "23:00 12/01/2026",
-              imageUrl: "https://picsum.photos/id/65/200/200"
+              productName: "Kem Dưỡng Cấp Ẩm Vichy Normaderm",
+              quantity: 1,
+              price: 550000,
+              createdAt: "23:05 12/01/2026",
+              imageUrl: "https://picsum.photos/id/20/48/48"
             },
             {
               id: "ORD-3",
-              productName: "CC+ Cream Illumination with SPF 50+",
+              productName: "Toner Hoa Cúc Calendula Kiehl's",
               quantity: 3,
-              price: 500000,
-              createdAt: "23:00 12/01/2026",
-              imageUrl: "https://picsum.photos/id/90/200/200"
+              price: 980000,
+              createdAt: "23:10 12/01/2026",
+              imageUrl: "https://picsum.photos/id/30/48/48"
             },
             {
               id: "ORD-4",
-              productName: "CC+ Cream Illumination with SPF 50+",
-              quantity: 3,
-              price: 500000,
-              createdAt: "23:00 12/01/2026",
-              imageUrl: "https://picsum.photos/id/111/200/200"
+              productName: "Sữa Rửa Mặt CeraVe Foaming Cleanser",
+              quantity: 1,
+              price: 390000,
+              createdAt: "23:15 12/01/2026",
+              imageUrl: "https://picsum.photos/id/40/48/48"
+            },
+            {
+              id: "ORD-5",
+              productName: "Kem Chống Nắng Anessa SPF 50+",
+              quantity: 2,
+              price: 650000,
+              createdAt: "23:20 12/01/2026",
+              imageUrl: "https://picsum.photos/id/50/48/48"
             }
           ],
           revenue: {

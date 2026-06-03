@@ -6,34 +6,38 @@ import StatCards from './components/StatCards';
 import RecentOrders from './components/RecentOrders';
 import RevenueChart from './components/RevenueChart';
 import BestSellers from './components/BestSellers';
+import Loading from '@/components/common/Loading';
 import styles from './styles.less';
 
 export default function Dashboard() {
   const [data, setData] = useState<DashboardResponse['data'] | null>(null);
   const [loading, setLoading] = useState(true);
+  
   useEffect(() => {
     getDashboardData().then((res) => {
-      if (res.success) {
-        setData(res.data);
-      }
+      if (res.success) setData(res.data);
       setLoading(false);
     });
   }, []);
 
-  if (loading || !data) {
-    return <div>Đang tải dữ liệu...</div>;
-  }
+  if (loading || !data) return <Loading />;
 
   return (
     <div className={styles.dashboardContainer}>
-      
-      {/* KHỐI TRÊN: 1 ô Theo dõi đơn hàng + 4 ô Thống kê */}
+      <div className={styles.pageHeader}>
+        <h1 className={styles.pageTitle}>Dashboard</h1>
+        <div className={styles.breadcrumb}>
+          <span>Home</span>
+          <span className={styles.separator}>/</span>
+          <span className={styles.active}>Dashboard</span>
+        </div>
+      </div>
+
       <div className={styles.topRow}>
         <OrderTracking />
         <StatCards stats={data.stats} />
       </div>
-
-      {/* KHỐI DƯỚI: Ô Đơn hàng mới + Nhóm (Biểu đồ & Sản phẩm bán chạy) */}
+      
       <div className={styles.bottomRow}>
         <RecentOrders orders={data.recentOrders} />
         <div className={styles.chartGroup}>
@@ -41,7 +45,6 @@ export default function Dashboard() {
           <BestSellers products={data.bestSellers} />
         </div>
       </div>
-
     </div>
   );
 }
