@@ -1,7 +1,14 @@
 import React, { useState } from 'react';
 import { StarFilled, UserOutlined } from '@ant-design/icons';
 
-const ProductTabs: React.FC = () => {
+interface ProductTabsProps {
+  description?: string;
+  detail?: string;
+  skinType?: string;
+  weight?: number;
+}
+
+const ProductTabs: React.FC<ProductTabsProps> = ({ description, detail, skinType, weight }) => {
   const [activeTab, setActiveTab] = useState<'desc' | 'info' | 'reviews'>('desc');
 
   return (
@@ -33,11 +40,13 @@ const ProductTabs: React.FC = () => {
         {activeTab === 'desc' && (
           <div className="tab-pane desc-pane animate-fade-in">
             <p>
-              CC+ Cream Illumination with SPF 50+ là dòng CC cream đa năng kết hợp trang điểm và chăm sóc da, giúp hiệu chỉnh màu da, che phủ khuyết điểm ở mức tự nhiên đến trung bình, đồng thời mang lại hiệu ứng làn da rạng rỡ, căng bóng nhờ lớp finish illumination đặc trưng. Sản phẩm tích hợp chống nắng phổ rộng SPF 50+, hỗ trợ bảo vệ da trước tác hại của tia UVA/UVB trong sinh hoạt hàng ngày, đồng thời bổ sung các thành phần dưỡng ẩm và chống oxy hóa giúp da mềm mịn, không khô căng khi sử dụng lâu.
+              {description || 'CC+ Cream Illumination with SPF 50+ là dòng CC cream đa năng kết hợp trang điểm và chăm sóc da, giúp hiệu chỉnh màu da, che phủ khuyết điểm ở mức tự nhiên đến trung bình, đồng thời mang lại hiệu ứng làn da rạng rỡ, căng bóng nhờ lớp finish illumination đặc trưng. Sản phẩm tích hợp chống nắng phổ rộng SPF 50+, hỗ trợ bảo vệ da trước tác hại của tia UVA/UVB trong sinh hoạt hàng ngày, đồng thời bổ sung các thành phần dưỡng ẩm và chống oxy hóa giúp da mềm mịn, không khô căng khi sử dụng lâu.'}
             </p>
-            <p>
-              Kết cấu kem mịn, dễ tán, tiệp da nhanh, phù hợp với những ai yêu thích phong cách trang điểm nhẹ nhàng, da trông khỏe và có độ glow tự nhiên. Theo đánh giá người dùng, sản phẩm được khen ngợi nhờ khả năng '2 trong 1' tiện lợi, giúp tiết kiệm thời gian trang điểm, cho làn da đều màu và sáng hơn rõ rệt; tuy nhiên, với làn da quá dầu, lớp finish có thể hơi bóng nếu không phủ phấn kiềm dầu.
-            </p>
+            {detail && (
+              <p>
+                {detail}
+              </p>
+            )}
           </div>
         )}
 
@@ -47,27 +56,27 @@ const ProductTabs: React.FC = () => {
               <tbody>
                 <tr>
                   <td className="info-label">Thương hiệu</td>
-                  <td className="info-value">IT Cosmetics</td>
+                  <td className="info-value">Lunaria Organic</td>
                 </tr>
                 <tr>
                   <td className="info-label">Xuất xứ</td>
-                  <td className="info-value">Mỹ (USA)</td>
+                  <td className="info-value">Việt Nam / Mỹ</td>
                 </tr>
                 <tr>
-                  <td className="info-label">Dung tích</td>
-                  <td className="info-value">32ml</td>
+                  <td className="info-label">Dung tích / Khối lượng</td>
+                  <td className="info-value">{weight ? `${weight}g` : '32ml'}</td>
                 </tr>
                 <tr>
                   <td className="info-label">Loại da phù hợp</td>
-                  <td className="info-value">Da nhạy cảm, da khô, da hỗn hợp thiên khô</td>
+                  <td className="info-value">{skinType || 'Da nhạy cảm, da khô, da hỗn hợp thiên khô'}</td>
                 </tr>
                 <tr>
                   <td className="info-label">Thành phần chính</td>
-                  <td className="info-value">Collagen thủy phân, Peptide, Niacinamide, Hyaluronic Acid, Chất chống oxy hóa, SPF 50+ vật lý.</td>
+                  <td className="info-value">Collagen thủy phân, Peptide, Niacinamide, Hyaluronic Acid, Tinh chất thảo mộc tự nhiên.</td>
                 </tr>
                 <tr>
                   <td className="info-label">Hướng dẫn sử dụng</td>
-                  <td className="info-value">Lấy một lượng kem vừa đủ, dùng cọ hoặc bông mút tán đều lên toàn bộ khuôn mặt và cổ trước khi ra nắng 15-20 phút.</td>
+                  <td className="info-value">Lấy một lượng sản phẩm vừa đủ, thoa đều lên da sạch và vỗ nhẹ để dưỡng chất thẩm thấu tối đa.</td>
                 </tr>
               </tbody>
             </table>
