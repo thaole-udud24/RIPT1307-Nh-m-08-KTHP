@@ -4,10 +4,10 @@ import {
 } from 'react';
 
 import {
-  Card,
   message,
   Space,
   Typography,
+  Pagination,
 } from 'antd';
 
 import OrderFilters from './components/OrderFilters';
@@ -269,9 +269,9 @@ export default function OrdersPage() {
                 Đơn hàng
                 </Title>
 
-                <p className="orders-subtitle">
-                Quản lý đơn hàng và thanh toán
-                </p>
+                <div className="admin-breadcrumb">
+                    Trang chủ {'>'} Đơn hàng
+                </div>
             </div>
             </div>
 
@@ -301,31 +301,46 @@ export default function OrdersPage() {
             {/* TABLE */}
 
             <div className="orders-table-card">
-            <OrderTable
-                orders={orders}
-                loading={loading}
-                total={total}
-                page={
-                filters.page || 1
-                }
-                limit={
-                filters.limit || 10
-                }
-                onPageChange={
-                handlePageChange
-                }
-                onViewDetail={
-                handleViewDetail
-                }
-                onConfirmPayment={
-                handleConfirmPayment
-                }
-                onCancelOrder={
-                handleOpenCancel
-                }
-            />
-            </div>
-        </Space>
+                <OrderTable
+                    orders={orders}
+                    loading={loading}
+                    total={total}
+                    page={filters.page || 1}
+                    limit={filters.limit || 10}
+                    onPageChange={handlePageChange}
+                    onViewDetail={handleViewDetail}
+                    onConfirmPayment={handleConfirmPayment}
+                    onCancelOrder={handleOpenCancel}
+                />
+
+                <div className="custom-pagination">
+                    <div className="pagination-total">
+                    Tổng số: {total}
+                    </div>
+
+                    <Pagination
+                    current={filters.page || 1}
+                    pageSize={filters.limit || 10}
+                    total={total}
+                    showSizeChanger
+                    pageSizeOptions={[
+                        '10',
+                        '20',
+                        '50',
+                    ]}
+                    onChange={(
+                        page,
+                        size,
+                    ) =>
+                        handlePageChange(
+                        page,
+                        size || 10,
+                        )
+                    }
+                    />
+                </div>
+                </div>
+            </Space>
         </div>
 
         {/* DETAIL */}

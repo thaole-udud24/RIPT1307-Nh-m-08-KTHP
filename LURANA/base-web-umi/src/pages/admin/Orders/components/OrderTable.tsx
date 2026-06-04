@@ -316,25 +316,7 @@ export default function OrderTable({
       scroll={{
         x: 1100,
       }}
-      pagination={{
-        current: page,
-
-        pageSize:
-          limit,
-
-        total,
-
-        showSizeChanger:
-          true,
-
-        showTotal: (
-          totalItems,
-        ) =>
-          `Tổng ${totalItems} đơn hàng`,
-
-        onChange:
-          onPageChange,
-      }}
+      pagination={false}
     />
   );
 }

@@ -4,7 +4,6 @@ import {
   Input,
   Row,
   Select,
-  Space,
   Dropdown,
 } from 'antd';
 
@@ -46,7 +45,7 @@ export default function OrderFilters({
   onReset,
   onExport,
 }: OrderFiltersProps) {
-  
+
   const [filterOpen, setFilterOpen] =
     useState(false);
 
