@@ -63,6 +63,11 @@ export default [
         path: '/admin/settings',
         component: '@/pages/admin/Settings',
       },
+
+      {
+        path: '/admin/orders',
+        component: '@/pages/admin/Orders',
+      },
     ],
   },
 

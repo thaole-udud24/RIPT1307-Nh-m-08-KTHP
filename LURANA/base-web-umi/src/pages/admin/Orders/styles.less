@@ -1,0 +1,393 @@
+/* ========================================
+   ORDERS PAGE
+======================================== */
+
+.orders-page {
+  padding: 8px;
+}
+
+/* ========================================
+   HEADER
+======================================== */
+
+.orders-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+
+  .ant-typography {
+    margin-bottom: 4px !important;
+    font-size: 30px;
+    font-weight: 700;
+    color: #262626;
+  }
+}
+
+.orders-subtitle {
+  margin: 0;
+  color: #8c8c8c;
+  font-size: 14px;
+}
+
+/* ========================================
+   FILTER CARD
+======================================== */
+
+.orders-filter-card {
+  padding: 0;
+
+  background: transparent;
+
+  border: none;
+
+  border-radius: 0;
+}
+
+/* ========================================
+   TABLE CARD
+======================================== */
+
+.orders-table-card {
+  padding: 12px;
+
+  background: #fff;
+
+  border: none;
+
+  border-radius: 16px;
+}
+
+.orders-table-card
+  .ant-table-thead
+  > tr
+  > th {
+  background: #fff7f3;
+
+  color: #262626;
+
+  font-weight: 600;
+
+  border-bottom: 1px solid #f6d9cd;
+}
+
+.orders-table-card
+  .ant-table-tbody
+  > tr:hover
+  > td {
+  background: #fffaf7 !important;
+}
+
+.orders-table-card
+  .ant-pagination-item-active {
+  border-color: #ff7a45;
+}
+
+.orders-table-card
+  .ant-pagination-item-active
+  a {
+  color: #ff7a45;
+}
+
+/* ========================================
+   STATISTICS
+======================================== */
+
+.statistics-card {
+  height: 130px;
+
+  border-radius: 18px;
+
+  border: none;
+
+  overflow: hidden;
+
+  transition: all 0.25s ease;
+}
+
+.statistics-card:hover {
+  transform: translateY(-3px);
+
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.08);
+}
+
+.statistics-card .ant-card-body {
+  height: 100%;
+
+  padding: 22px 24px;
+
+  display: flex;
+}
+
+.statistics-content {
+  width: 100%;
+
+  display: flex;
+
+  flex-direction: column;
+
+  justify-content: space-between;
+
+  height: 100%;
+}
+
+.statistics-title {
+  color: #666;
+
+  font-size: 14px;
+
+  font-weight: 500;
+
+  margin: 0;
+}
+
+.statistics-footer {
+  width: 100%;
+
+  display: flex;
+
+  align-items: center;
+
+  justify-content: space-between;
+}
+
+.statistics-value {
+  font-size: 44px;
+
+  font-weight: 700;
+
+  line-height: 1;
+
+  color: #1f1f1f;
+}
+
+.statistics-icon {
+  width: 50px;
+
+  height: 50px;
+
+  border-radius: 50%;
+
+  display: flex;
+
+  align-items: center;
+
+  justify-content: center;
+
+  color: #fff;
+
+  font-size: 26px;
+
+  flex-shrink: 0;
+}
+
+/* ========================================
+   CARD COLORS
+======================================== */
+
+.card-total {
+  background:
+    linear-gradient(
+      135deg,
+      #fff7f3,
+      #ffe7db
+    );
+}
+
+.card-pending {
+  background:
+    linear-gradient(
+      135deg,
+      #fffbe6,
+      #fff1b8
+    );
+}
+
+.card-processing {
+  background:
+    linear-gradient(
+      135deg,
+      #e6f7ff,
+      #bae7ff
+    );
+}
+
+.card-paid {
+  background:
+    linear-gradient(
+      135deg,
+      #f6ffed,
+      #d9f7be
+    );
+}
+
+.card-cancelled {
+  background:
+    linear-gradient(
+      135deg,
+      #fff1f0,
+      #ffccc7
+    );
+}
+
+/* ========================================
+   ICON COLORS
+======================================== */
+
+.icon-total {
+  background: #ff7a45;
+}
+
+.icon-pending {
+  background: #faad14;
+}
+
+.icon-processing {
+  background: #1890ff;
+}
+
+.icon-paid {
+  background: #52c41a;
+}
+
+.icon-cancelled {
+  background: #ff4d4f;
+}
+
+/* ========================================
+   RESPONSIVE
+======================================== */
+
+@media (max-width: 1200px) {
+  .statistics-card {
+    height: 110px;
+  }
+
+  .statistics-value {
+    font-size: 32px;
+  }
+}
+
+@media (max-width: 768px) {
+  .orders-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .statistics-card {
+    height: auto;
+  }
+
+  .statistics-value {
+    font-size: 28px;
+  }
+
+  .statistics-icon {
+    width: 50px;
+    height: 50px;
+    font-size: 20px;
+  }
+}
+
+/* ========================================
+   CUSTOM FILTERS
+======================================== */
+
+.order-filters {
+  margin-bottom: 24px;
+}
+
+.advanced-filters {
+  margin-top: 12px;
+
+  padding: 20px;
+
+  background: #fff;
+
+  border: 1px solid #f0f0f0;
+
+  border-radius: 12px;
+}
+
+/* ========================================
+   FILTER BAR
+======================================== */
+
+.orders-search-input {
+  height: 40px;
+}
+
+.orders-search-input .ant-input {
+  height: 40px;
+
+  border-radius: 0 !important;
+}
+
+.orders-action-btn {
+  height: 40px;
+
+  border-radius: 0;
+
+  display: flex;
+
+  align-items: center;
+}
+
+.export-btn {
+  background: #ffb399;
+
+  border-color: #ffb399;
+}
+
+.export-btn:hover {
+  background: #ff9f80 !important;
+
+  border-color: #ff9f80 !important;
+}
+
+.export-btn {
+  background: #f7b49d;
+
+  border-color: #f7b49d;
+
+  color: #000;
+}
+
+/* ========================================
+   CUSTOM FILTER DROPDOWN
+======================================== */
+
+.orders-custom-filter {
+  width: 280px;
+
+  padding: 16px;
+
+  background: #fff;
+
+  border: 1px solid #f0f0f0;
+
+  box-shadow:
+    0 8px 24px
+    rgba(0, 0, 0, 0.08);
+}
+
+.filter-title {
+  font-size: 16px;
+
+  font-weight: 600;
+
+  margin-bottom: 16px;
+}
+
+.filter-field {
+  margin-bottom: 16px;
+}
+
+.filter-field label {
+  display: block;
+
+  margin-bottom: 6px;
+
+  font-size: 13px;
+
+  color: #666;
+}

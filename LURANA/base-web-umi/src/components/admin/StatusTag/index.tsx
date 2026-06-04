@@ -7,6 +7,11 @@ import {
   STATUS,
 } from '@/constants/enums';
 
+import {
+  OrderStatus,
+  PaymentStatus,
+} from '@/types/order';
+
 // =========================
 // TYPES
 // =========================
@@ -16,10 +21,15 @@ export type StatusType =
   | STATUS.INACTIVE
   | 'OUT_OF_STOCK'
   | 'DRAFT'
+
+  // Promotions
   | 'upcoming'
   | 'active'
   | 'expired'
-  | 'ended';
+  | 'ended'
+  
+  | OrderStatus
+  | PaymentStatus
 
 interface StatusTagProps {
   status:
@@ -41,7 +51,13 @@ interface StatusTagProps {
 // CONFIG
 // =========================
 
-const STATUS_CONFIG = {
+const STATUS_CONFIG: Record<
+  string,
+  {
+    label: string;
+    color: string;
+  }
+> = {
 
   // =========================
   // COMMON
@@ -89,6 +105,39 @@ const STATUS_CONFIG = {
   expired: {
     label: 'Đã hết hạn',
     color: 'error',
+  },
+
+    // =========================
+  // ORDERS
+  // =========================
+
+  PENDING: {
+    label: 'Chờ thanh toán',
+    color: 'warning',
+  },
+
+  PROCESSING: {
+    label: 'Đang xử lý',
+    color: 'processing',
+  },
+
+  CANCELLED: {
+    label: 'Đã hủy',
+    color: 'error',
+  },
+
+  // =========================
+  // PAYMENTS
+  // =========================
+
+  PAID: {
+    label: 'Đã thanh toán',
+    color: 'success',
+  },
+
+  UNPAID: {
+    label: 'Chưa thanh toán',
+    color: 'warning',
   },
 };
 
