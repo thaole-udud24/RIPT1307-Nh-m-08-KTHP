@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { message } from 'antd';
+import { InboxOutlined } from '@ant-design/icons';
 import NotificationSidebar from './components/NotificationSidebar';
 import NotificationFilter from './components/NotificationFilter';
 import NotificationItem from './components/NotificationItem';
@@ -21,7 +22,7 @@ const initialNotifications: NotificationItemData[] = [
   {
     id: 'notif-2',
     category: 'PROMOTION',
-    title: '🎁 Quà tặng độc quyền: Voucher giảm 100K cho đơn từ 500K',
+    title: 'Quà tặng độc quyền: Voucher giảm 100K cho đơn từ 500K',
     message: 'Lunaria gửi tặng bạn mã ưu đãi đặc biệt tháng 5. Nhập mã ngay tại bước thanh toán để tận hưởng ưu đãi tuyệt vời này nhé!',
     date: '18/05/2026',
     time: '15:20',
@@ -32,7 +33,7 @@ const initialNotifications: NotificationItemData[] = [
   {
     id: 'notif-3',
     category: 'SYSTEM',
-    title: '🚀 Nâng cấp hệ thống & Ra mắt dòng sản phẩm làm sạch da mới',
+    title: 'Nâng cấp hệ thống & Ra mắt dòng sản phẩm làm sạch da mới',
     message: 'Lunaria vừa hoàn tất nâng cấp giao diện trải nghiệm người dùng và ra mắt bộ sưu tập Tẩy trang & Sữa rửa mặt thiên nhiên hoàn toàn mới. Khám phá ngay hôm nay!',
     date: '16/05/2026',
     time: '10:00',
@@ -51,7 +52,7 @@ const initialNotifications: NotificationItemData[] = [
   {
     id: 'notif-5',
     category: 'PROMOTION',
-    title: '✨ Freeship toàn quốc cho mọi đơn hàng dịp cuối tuần',
+    title: 'Freeship toàn quốc cho mọi đơn hàng dịp cuối tuần',
     message: 'Ưu đãi miễn phí vận chuyển 100% không giới hạn giá trị đơn hàng áp dụng duy nhất trong thứ 7 và Chủ nhật tuần này. Nhanh tay săn ngay sản phẩm yêu thích!',
     date: '08/05/2026',
     time: '09:00',
@@ -62,16 +63,29 @@ const initialNotifications: NotificationItemData[] = [
 ];
 
 const NotificationsPage: React.FC = () => {
-  const [notifications, setNotifications] = useState<NotificationItemData[]>(() => {
+  // Cleanup old localStorage key to avoid storing stale items
+  useEffect(() => {
     try {
-      const saved = localStorage.getItem('lunaria_notifications');
+      localStorage.removeItem('lunaria_notifications');
+    } catch (e) {}
+  }, []);
+
+  const [notifications, setNotifications] = useState<NotificationItemData[]>(() => {
+    const cleanItem = (item: NotificationItemData) => ({
+      ...item,
+      title: item.title.replace(/^[🎁🚀✨\uFFFD\s]+/, '').trim()
+    });
+
+    try {
+      const saved = localStorage.getItem('lunaria_notifications_v2');
       if (saved) {
-        return JSON.parse(saved);
+        const parsed = JSON.parse(saved);
+        return parsed.map(cleanItem);
       }
     } catch (e) {
       // fallback
     }
-    return initialNotifications;
+    return initialNotifications.map(cleanItem);
   });
 
   const [activeTab, setActiveTab] = useState<NotificationCategory>('ALL');
@@ -84,7 +98,7 @@ const NotificationsPage: React.FC = () => {
   // Sync to localStorage
   useEffect(() => {
     try {
-      localStorage.setItem('lunaria_notifications', JSON.stringify(notifications));
+      localStorage.setItem('lunaria_notifications_v2', JSON.stringify(notifications));
     } catch (e) {}
   }, [notifications]);
 
@@ -187,7 +201,7 @@ const NotificationsPage: React.FC = () => {
                 ))
               ) : (
                 <div className="empty-notifications">
-                  <div className="empty-icon">📭</div>
+                  <div className="empty-icon"><InboxOutlined style={{ fontSize: '64px', color: '#ff9a7a' }} /></div>
                   <h3>Không tìm thấy thông báo nào</h3>
                   <p>Bạn chưa có thông báo nào trong danh mục hoặc bộ lọc này.</p>
                 </div>

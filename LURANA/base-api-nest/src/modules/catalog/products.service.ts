@@ -7,6 +7,7 @@ import { SkinType, SkinTypeDocument } from './schemas/skin-type.schema';
 import { ListProductsDto } from './dto/list-products.dto';
 import { CreateProductDto } from './dto/create-product.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
+import { PromotionsService } from '../promotions/promotions.service';
 
 @Injectable()
 export class ProductsService {
@@ -14,6 +15,7 @@ export class ProductsService {
     @InjectModel(Product.name) private productModel: Model<ProductDocument>,
     @InjectModel(Category.name) private categoryModel: Model<CategoryDocument>,
     @InjectModel(SkinType.name) private skinTypeModel: Model<SkinTypeDocument>,
+    private readonly promotionsService: PromotionsService, 
   ) {}
 
   private generateSlug(name: string): string {
@@ -44,6 +46,7 @@ export class ProductsService {
 
     return new this.productModel({ 
       ...dto, 
+      category: new Types.ObjectId(dto.category), 
       sku, 
       slug, 
       variants,
@@ -83,7 +86,19 @@ export class ProductsService {
       await product.populate({ path: 'skinTypes', select: 'name code', options: { strictPopulate: false } });
     } catch (err) {}
 
-    return product;
+    const productObj = product.toObject();
+    productObj.variants = await Promise.all(
+      productObj.variants.map(async (variant: any) => {
+        const activePrice = await this.promotionsService.calculateActivePrice(productObj._id.toString(), variant.priceSell);
+        return {
+          ...variant,
+          originalPrice: variant.priceSell, 
+          priceSell: activePrice            
+        };
+      })
+    );
+
+    return productObj;
   }
 
   async update(id: string, dto: UpdateProductDto): Promise<ProductDocument> {
@@ -93,6 +108,10 @@ export class ProductsService {
 
     if (dto.name && dto.name !== existing.name) (dto as any).slug = this.generateSlug(dto.name);
     
+    if (dto.category) {
+      (dto as any).category = new Types.ObjectId(dto.category);
+    }
+
     if (dto.variants) {
       dto.variants = dto.variants.map((v: any) => {
         const oldVariant = existing.variants.find(ov => ov.variantName === v.variantName);
@@ -148,17 +167,27 @@ export class ProductsService {
 
     const data = await Promise.all(
       rawProducts.map(async (product) => {
+        let popProduct: any = product;
         try {
           if (product.category && Types.ObjectId.isValid(product.category.toString()) && product.category.toString().length === 24) {
-            return await product.populate([
+            popProduct = await product.populate([
               { path: 'category', select: 'name code slug', options: { strictPopulate: false } },
               { path: 'skinTypes', select: 'name code', options: { strictPopulate: false } }
             ]);
           }
-          return product;
-        } catch (err) {
-          return product;
-        }
+        } catch (err) {}
+        const productObj = popProduct.toObject ? popProduct.toObject() : popProduct;
+        productObj.variants = await Promise.all(
+          productObj.variants.map(async (variant: any) => {
+            const activePrice = await this.promotionsService.calculateActivePrice(productObj._id.toString(), variant.priceSell);
+            return {
+              ...variant,
+              originalPrice: variant.priceSell,
+              priceSell: activePrice
+            };
+          })
+        );
+        return productObj;
       })
     );
     

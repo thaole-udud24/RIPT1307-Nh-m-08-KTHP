@@ -20,4 +20,8 @@ export class CheckoutDto {
   @IsOptional()
   @IsString()
   note?: string; 
+
+  @IsOptional()
+  @IsString()
+  voucherCode?: string; 
 }

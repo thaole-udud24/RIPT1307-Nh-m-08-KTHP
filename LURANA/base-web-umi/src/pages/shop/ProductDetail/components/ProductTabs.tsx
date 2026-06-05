@@ -2,13 +2,10 @@ import React, { useState } from 'react';
 import { StarFilled, UserOutlined } from '@ant-design/icons';
 
 interface ProductTabsProps {
-  description?: string;
-  detail?: string;
-  skinType?: string;
-  weight?: number;
+  productName?: string;
 }
 
-const ProductTabs: React.FC<ProductTabsProps> = ({ description, detail, skinType, weight }) => {
+const ProductTabs: React.FC<ProductTabsProps> = ({ productName = 'CC+ Cream Illumination with SPF 50+' }) => {
   const [activeTab, setActiveTab] = useState<'desc' | 'info' | 'reviews'>('desc');
 
   return (
@@ -40,13 +37,11 @@ const ProductTabs: React.FC<ProductTabsProps> = ({ description, detail, skinType
         {activeTab === 'desc' && (
           <div className="tab-pane desc-pane animate-fade-in">
             <p>
-              {description || 'CC+ Cream Illumination with SPF 50+ là dòng CC cream đa năng kết hợp trang điểm và chăm sóc da, giúp hiệu chỉnh màu da, che phủ khuyết điểm ở mức tự nhiên đến trung bình, đồng thời mang lại hiệu ứng làn da rạng rỡ, căng bóng nhờ lớp finish illumination đặc trưng. Sản phẩm tích hợp chống nắng phổ rộng SPF 50+, hỗ trợ bảo vệ da trước tác hại của tia UVA/UVB trong sinh hoạt hàng ngày, đồng thời bổ sung các thành phần dưỡng ẩm và chống oxy hóa giúp da mềm mịn, không khô căng khi sử dụng lâu.'}
+              {productName} là dòng sản phẩm chăm sóc da cao cấp được nghiên cứu và thiết kế tối ưu, kết hợp giữa khả năng phục hồi da tự nhiên và bảo vệ bề mặt biểu bì. Sản phẩm bổ sung các hoạt chất dưỡng ẩm giúp làn da mềm mượt, hỗ trợ đẩy lùi dấu hiệu mệt mỏi, khô sạm do môi trường tác động, đem lại hiệu ứng căng bóng mịn màng và khoẻ khoắn tự nhiên.
             </p>
-            {detail && (
-              <p>
-                {detail}
-              </p>
-            )}
+            <p>
+              Kết cấu tinh chất mỏng nhẹ, dễ tán, tiệp da nhanh chóng và không gây nhờn bóng hay bít tắc lỗ chân lông. Sản phẩm được đánh giá cao nhờ tính an toàn, dịu nhẹ cho mọi loại da, kể cả da nhạy cảm hoặc da sau điều trị mụn.
+            </p>
           </div>
         )}
 
@@ -55,28 +50,32 @@ const ProductTabs: React.FC<ProductTabsProps> = ({ description, detail, skinType
             <table className="product-info-table">
               <tbody>
                 <tr>
+                  <td className="info-label">Sản phẩm</td>
+                  <td className="info-value">{productName}</td>
+                </tr>
+                <tr>
                   <td className="info-label">Thương hiệu</td>
                   <td className="info-value">Lunaria Organic</td>
                 </tr>
                 <tr>
                   <td className="info-label">Xuất xứ</td>
-                  <td className="info-value">Việt Nam / Mỹ</td>
+                  <td className="info-value">Việt Nam / Nhập khẩu nguyên liệu hữu cơ</td>
                 </tr>
                 <tr>
-                  <td className="info-label">Dung tích / Khối lượng</td>
-                  <td className="info-value">{weight ? `${weight}g` : '32ml'}</td>
+                  <td className="info-label">Dung tích</td>
+                  <td className="info-value">50ml / 150ml tùy phiên bản</td>
                 </tr>
                 <tr>
                   <td className="info-label">Loại da phù hợp</td>
-                  <td className="info-value">{skinType || 'Da nhạy cảm, da khô, da hỗn hợp thiên khô'}</td>
+                  <td className="info-value">Mọi loại da, đặc biệt là da dầu mụn nhạy cảm và da khô thiếu ẩm</td>
                 </tr>
                 <tr>
                   <td className="info-label">Thành phần chính</td>
-                  <td className="info-value">Collagen thủy phân, Peptide, Niacinamide, Hyaluronic Acid, Tinh chất thảo mộc tự nhiên.</td>
+                  <td className="info-value">Chiết xuất thiên nhiên hữu cơ, Collagen thủy phân, Peptide, Niacinamide, Hyaluronic Acid.</td>
                 </tr>
                 <tr>
                   <td className="info-label">Hướng dẫn sử dụng</td>
-                  <td className="info-value">Lấy một lượng sản phẩm vừa đủ, thoa đều lên da sạch và vỗ nhẹ để dưỡng chất thẩm thấu tối đa.</td>
+                  <td className="info-value">Lấy lượng vừa đủ tán đều lên da sạch sau bước toner/serum. Sử dụng đều đặn mỗi buổi sáng và tối.</td>
                 </tr>
               </tbody>
             </table>

@@ -50,6 +50,18 @@ export default [
         path: '/admin/skintypes',
         component: '@/pages/admin/SkinTypes',
       },
+      {
+        path: '/admin/promotions',
+        component: '@/pages/admin/Promotions',
+      },
+      {
+        path: '/admin/reports',
+        component: '@/pages/admin/Reports',
+      },
+      {
+      path: '/admin/vouchers',
+      component: '@/pages/admin/Vouchers',
+      },
     ],
   },
 

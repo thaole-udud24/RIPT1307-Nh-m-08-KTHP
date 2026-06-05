@@ -6,17 +6,24 @@ import { Cart } from '../cart/schemas/cart.schema';
 import { ProductsService } from '../catalog/products.service';
 import { OrderStatus } from 'src/common/constants/order-status.constant';
 import { ListOrdersDto } from './dto/list-orders.dto';
+import { CheckoutDto } from './dto/checkout.dto';
+import { VouchersService } from '../vouchers/vouchers.service';
+import { VoucherUsage, VoucherUsageDocument } from '../vouchers/schemas/voucher-usage.schema';
+import { PromotionsService } from '../promotions/promotions.service';
 
 @Injectable()
 export class OrdersService {
   constructor(
     @InjectModel(Order.name) private orderModel: Model<OrderDocument>,
     @InjectModel(Cart.name) private cartModel: Model<Cart>,
+    @InjectModel(VoucherUsage.name) private voucherUsageModel: Model<VoucherUsageDocument>,
     @InjectConnection() private readonly connection: Connection,
     private readonly productsService: ProductsService,
+    private readonly vouchersService: VouchersService,
+    private readonly promotionsService: PromotionsService,
   ) {}
 
-  async checkout(userId: string, checkoutDto: any) {
+  async checkout(userId: string, checkoutDto: CheckoutDto) {
     const session = await this.connection.startSession();
     session.startTransaction();
 
@@ -30,7 +37,8 @@ export class OrdersService {
       }
 
       const orderItems: any[] = [];
-      let total = 0;
+      let cartTotal = 0; 
+      let hasFlashSaleProduct = false; 
 
       for (const item of cart.items) {
         await this.productsService.holdStock(item.productId.toString(), item.variantName, item.quantity, session);
@@ -39,22 +47,54 @@ export class OrdersService {
         const variant = product.variants.find(v => v.variantName === item.variantName);
         if (!variant) throw new NotFoundException('Không tìm thấy biến thể tương ứng.');
 
-        const subTotal = variant.priceSell * item.quantity;
-        total += subTotal;
+        const currentPrice = await this.promotionsService.calculateActivePrice(
+          item.productId.toString(), 
+          variant.priceSell
+        );
+        
+        if (currentPrice < variant.priceSell) {
+          hasFlashSaleProduct = true; 
+        }
+
+        const subTotal = currentPrice * item.quantity;
+        cartTotal += subTotal;
 
         orderItems.push({
           productId: item.productId,
           name: product.name,
           variantName: item.variantName,
           quantity: item.quantity,
-          priceSell: variant.priceSell,
+          priceSell: currentPrice,
           priceImport: variant.priceImport,
-          profit: (variant.priceSell - variant.priceImport) * item.quantity
+          profit: (currentPrice - variant.priceImport) * item.quantity
         });
       }
 
+      let discountAmount = 0;
+      let appliedVoucherCode: string | null = null;
+      const shippingFee = 40000; 
+
+      if (checkoutDto.voucherCode) {
+        const productIds = cart.items.map(item => item.productId.toString());
+        
+        const validationResult = await this.vouchersService.validateVoucher({
+          voucherCode: checkoutDto.voucherCode,
+          cartTotal: cartTotal,
+          productIds: productIds,
+          hasDirectDiscount: hasFlashSaleProduct, 
+        });
+
+        if (validationResult.valid) {
+          discountAmount = validationResult.discountAmount;
+          appliedVoucherCode = validationResult.voucher.voucherCode;
+        }
+      }
+
+      const finalTotal = cartTotal + shippingFee - discountAmount;
+      if (finalTotal < 0) throw new BadRequestException('Lỗi tính toán: Tổng tiền thanh toán không hợp lệ.');
+
       const orderCode = `LRN${Date.now()}`;
-      const qrUrl = `https://img.vietqr.io/image/mbbank-0908112006-compact2.jpg?amount=${total}&addInfo=${orderCode}`;
+      const qrUrl = `https://img.vietqr.io/image/mbbank-0908112006-compact2.jpg?amount=${finalTotal}&addInfo=${orderCode}`;
       
       const paymentTimeout = new Date();
       paymentTimeout.setMinutes(paymentTimeout.getMinutes() + 15);
@@ -63,21 +103,40 @@ export class OrdersService {
         orderCode,
         userId: new Types.ObjectId(userId),
         items: orderItems,
-        totalAmount: total,
+        originalTotal: cartTotal,       
+        shippingFee: shippingFee,       
+        discountAmount: discountAmount, 
+        appliedVoucher: appliedVoucherCode, 
+        totalAmount: finalTotal,        
         shippingAddress: checkoutDto.address,
         paymentMethod: checkoutDto.paymentMethod,
+        note: checkoutDto.note,
         status: OrderStatus.PENDING,
         paymentStatus: 'UNPAID',
         qrUrl,
         paymentTimeout,
       });
-
-      await order.save({ session });
       
+      const savedOrder = await order.save({ session });
+
+      if (appliedVoucherCode) {
+        const voucherInfo = await this.vouchersService['voucherModel'].findOne({ voucherCode: appliedVoucherCode }).exec();
+        if (voucherInfo) {
+          const usage = new this.voucherUsageModel({
+            voucherId: voucherInfo._id,
+            voucherCode: appliedVoucherCode,
+            userId: new Types.ObjectId(userId),
+            orderId: savedOrder._id,
+            discountAmount: discountAmount
+          });
+          await usage.save({ session });
+        }
+      }
+
       await this.cartModel.deleteOne({ userId: new Types.ObjectId(userId) }).session(session);
 
       await session.commitTransaction();
-      return order;
+      return savedOrder;
     } catch (error) {
       await session.abortTransaction();
       throw error;
@@ -211,5 +270,127 @@ export class OrdersService {
     const order = await this.orderModel.findByIdAndUpdate(id, { status }, { new: true }).exec();
     if (!order) throw new NotFoundException('Không tìm thấy đơn hàng');
     return order;
+  }
+
+  // ==========================================
+  // DASHBOARD & REPORTING AGGREGATION
+  // ==========================================
+  async getDashboardRevenue() {
+    const startOfMonth = new Date();
+    startOfMonth.setDate(1);
+    startOfMonth.setHours(0, 0, 0, 0);
+
+    // 1. Lấy chỉ số tổng quan (KPIs)
+    const [kpiResult] = await this.orderModel.aggregate([
+      { $match: { paymentStatus: 'PAID', createdAt: { $gte: startOfMonth } } },
+      {
+        $group: {
+          _id: null,
+          totalOrders: { $sum: 1 },
+          grossRevenue: { $sum: '$originalTotal' },
+          netRevenue: { $sum: { $subtract: ['$totalAmount', '$shippingFee'] } },
+          totalDiscount: { $sum: '$discountAmount' },
+          totalItemsProfit: { $sum: { $sum: '$items.profit' } }
+        }
+      }
+    ]);
+
+    const kpis = kpiResult ? {
+      totalRevenue: { value: kpiResult.netRevenue },
+      netProfit: { value: kpiResult.totalItemsProfit - kpiResult.totalDiscount, trend: 12 }, 
+      discounts: { value: kpiResult.totalDiscount },
+      aov: { value: kpiResult.totalOrders > 0 ? Math.floor(kpiResult.netRevenue / kpiResult.totalOrders) : 0 }
+    } : {
+      totalRevenue: { value: 0 }, netProfit: { value: 0, trend: 0 }, discounts: { value: 0 }, aov: { value: 0 }
+    };
+
+    // 2. Phân tích loại sản phẩm (Category Donut)
+    const categoryData = await this.orderModel.aggregate([
+      { $match: { paymentStatus: 'PAID', createdAt: { $gte: startOfMonth } } },
+      { $unwind: '$items' },
+      {
+        $lookup: {
+          from: 'products', 
+          localField: 'items.productId',
+          foreignField: '_id',
+          as: 'productInfo'
+        }
+      },
+      { $unwind: '$productInfo' },
+      {
+        $lookup: {
+          from: 'categories', 
+          localField: 'productInfo.category',
+          foreignField: '_id',
+          as: 'categoryInfo'
+        }
+      },
+      { $unwind: '$categoryInfo' },
+      {
+        $group: {
+          _id: '$categoryInfo.name', 
+          value: { $sum: { $multiply: ['$items.priceSell', '$items.quantity'] } }
+        }
+      },
+      { $sort: { value: -1 } }
+    ]);
+
+    const colors = ['#FFA78A', '#A7C7E7', '#E6E6FA', '#FFD1DC', '#B4E6B0'];
+    const formattedCategory = categoryData.map((cat, index) => ({
+      name: cat._id,
+      value: cat.value,
+      color: colors[index % colors.length]
+    }));
+
+    // 3. Top Sản phẩm
+    const topProducts = await this.orderModel.aggregate([
+      { $match: { paymentStatus: 'PAID', createdAt: { $gte: startOfMonth } } },
+      { $unwind: '$items' },
+      {
+        $lookup: {
+          from: 'products',
+          localField: 'items.productId',
+          foreignField: '_id',
+          as: 'productInfo'
+        }
+      },
+      { $unwind: '$productInfo' },
+      {
+        $lookup: {
+          from: 'categories',
+          localField: 'productInfo.category',
+          foreignField: '_id',
+          as: 'categoryInfo'
+        }
+      },
+      { $unwind: '$categoryInfo' },
+      {
+        $group: {
+          _id: '$items.productId',
+          name: { $first: '$items.name' },
+          sku: { $first: '$productInfo.sku' },
+          categoryName: { $first: '$categoryInfo.name' }, 
+          sales: { $sum: '$items.quantity' },
+          revenue: { $sum: { $multiply: ['$items.priceSell', '$items.quantity'] } },
+          profit: { $sum: '$items.profit' }
+        }
+      },
+      { $sort: { profit: -1 } },
+      { $limit: 10 }
+    ]);
+
+    return {
+      success: true,
+      data: {
+        kpis,
+        categoryData: formattedCategory,
+        topProducts: topProducts.map(p => ({ ...p, id: p._id.toString() })),
+        topVouchers: [], 
+        trendData: [
+          { label: 'Tuần 1', revenue: 15000000, profit: 5000000 },
+          { label: 'Tuần 2', revenue: 22000000, profit: 8000000 },
+        ]
+      }
+    };
   }
 }

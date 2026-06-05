@@ -9,7 +9,9 @@ import { UsersModule } from './modules/users/users.module';
 import { CatalogModule } from './modules/catalog/catalog.module';
 import { CartModule } from './modules/cart/cart.module'; 
 import { OrdersModule } from './modules/orders/orders.module'; 
-
+import { VouchersModule } from './modules/vouchers/vouchers.module';
+import { PromotionsModule } from './modules/promotions/promotions.module';
+import { DashboardModule } from './modules/dashboard/dashboard.module';
 @Module({
   imports: [
     ConfigModule.forRoot({
@@ -24,6 +26,9 @@ import { OrdersModule } from './modules/orders/orders.module';
     CatalogModule, 
     CartModule,   
     OrdersModule,  
+    DashboardModule,
+    VouchersModule,
+    PromotionsModule,
   ],
 })
 export class AppModule {}

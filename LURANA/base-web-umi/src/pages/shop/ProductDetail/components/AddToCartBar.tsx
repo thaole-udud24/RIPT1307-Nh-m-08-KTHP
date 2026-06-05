@@ -74,15 +74,61 @@ const AddToCartBar: React.FC<AddToCartBarProps> = ({
   };
 
   const handleAddToCart = () => {
-    saveToCart();
-    message.success(`Đã thêm ${quantity} sản phẩm "${productName}" vào giỏ hàng!`);
+    try {
+      const stored = localStorage.getItem('lunaria_cart_items');
+      const cartItems: any[] = stored ? JSON.parse(stored) : [];
+      const priceNum = parseInt(price.replace(/[^0-9]/g, ''), 10);
+      const existingIdx = cartItems.findIndex((item) => item.name === productName);
+      
+      if (existingIdx > -1) {
+        cartItems[existingIdx].qty += quantity;
+      } else {
+        cartItems.push({
+          id: Date.now(),
+          name: productName,
+          variant: 'Mặc định',
+          price: priceNum,
+          qty: quantity,
+          img: 'anh-san-pham-1.png',
+        });
+      }
+      
+      localStorage.setItem('lunaria_cart_items', JSON.stringify(cartItems));
+      window.dispatchEvent(new Event('cartUpdate'));
+      message.success(`Đã thêm ${quantity} sản phẩm "${productName}" vào giỏ hàng!`);
+    } catch (e) {
+      message.error('Lỗi khi thêm sản phẩm vào giỏ hàng');
+    }
   };
 
   const handleBuyNow = () => {
-    saveToCart();
-    message.success(`Đang chuyển đến trang thanh toán cho ${quantity} sản phẩm!`);
-    history.push('/cart');
+    try {
+      const stored = localStorage.getItem('lunaria_cart_items');
+      const cartItems: any[] = stored ? JSON.parse(stored) : [];
+      const priceNum = parseInt(price.replace(/[^0-9]/g, ''), 10);
+      const existingIdx = cartItems.findIndex((item) => item.name === productName);
+      
+      if (existingIdx > -1) {
+        cartItems[existingIdx].qty += quantity;
+      } else {
+        cartItems.push({
+          id: Date.now(),
+          name: productName,
+          variant: 'Mặc định',
+          price: priceNum,
+          qty: quantity,
+          img: 'anh-san-pham-1.png',
+        });
+      }
+      
+      localStorage.setItem('lunaria_cart_items', JSON.stringify(cartItems));
+      window.dispatchEvent(new Event('cartUpdate'));
+      history.push('/cart');
+    } catch (e) {
+      message.error('Lỗi xảy ra');
+    }
   };
+
 
   return (
     <div className="product-info-summary">

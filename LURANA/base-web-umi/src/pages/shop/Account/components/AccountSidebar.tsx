@@ -1,6 +1,15 @@
 import React from 'react';
 import { history } from 'umi';
 import { AccountTabType } from '../types';
+import {
+  UserOutlined,
+  CameraOutlined,
+  EnvironmentOutlined,
+  ShoppingOutlined,
+  LockOutlined,
+  BellOutlined,
+  LogoutOutlined,
+} from '@ant-design/icons';
 
 interface AccountSidebarProps {
   activeTab: AccountTabType;
@@ -19,8 +28,12 @@ const AccountSidebar: React.FC<AccountSidebarProps> = ({
     <div className="account-sidebar">
       <div className="sidebar-user-profile">
         <div className="avatar-wrapper">
-          <div className="avatar">👤</div>
-          <span className="upload-badge" title="Thay đổi ảnh đại diện">📷</span>
+          <div className="avatar">
+            <UserOutlined style={{ fontSize: '32px', color: '#ff9a7a' }} />
+          </div>
+          <span className="upload-badge" title="Thay đổi ảnh đại diện">
+            <CameraOutlined />
+          </span>
         </div>
         <h3>{userEmail ? userEmail.split('@')[0] : 'Thành viên'}</h3>
         <span className="user-tag">Khách hàng thân thiết</span>
@@ -31,39 +44,39 @@ const AccountSidebar: React.FC<AccountSidebarProps> = ({
           className={`nav-tab-btn ${activeTab === 'PROFILE' ? 'active' : ''}`}
           onClick={() => onTabChange('PROFILE')}
         >
-          <span className="icon">👤</span> Hồ sơ cá nhân
+          <UserOutlined className="icon" /> Hồ sơ cá nhân
         </button>
 
         <button
           className={`nav-tab-btn ${activeTab === 'ADDRESSES' ? 'active' : ''}`}
           onClick={() => onTabChange('ADDRESSES')}
         >
-          <span className="icon">📍</span> Sổ địa chỉ
+          <EnvironmentOutlined className="icon" /> Sổ địa chỉ
         </button>
 
         <button
           className={`nav-tab-btn ${activeTab === 'ORDERS' ? 'active' : ''}`}
           onClick={() => history.push('/orders')}
         >
-          <span className="icon">📦</span> Lịch sử đơn hàng
+          <ShoppingOutlined className="icon" /> Lịch sử đơn hàng
         </button>
 
         <button
           className={`nav-tab-btn ${activeTab === 'CHANGE_PASSWORD' ? 'active' : ''}`}
           onClick={() => onTabChange('CHANGE_PASSWORD')}
         >
-          <span className="icon">🔒</span> Đổi mật khẩu
+          <LockOutlined className="icon" /> Đổi mật khẩu
         </button>
 
         <button
           className="nav-tab-btn"
           onClick={() => history.push('/notifications')}
         >
-          <span className="icon">🔔</span> Thông báo của tôi
+          <BellOutlined className="icon" /> Thông báo của tôi
         </button>
 
         <button className="nav-tab-btn logout-btn" onClick={onLogout}>
-          <span className="icon">🚪</span> Đăng xuất
+          <LogoutOutlined className="icon" /> Đăng xuất
         </button>
       </nav>
     </div>

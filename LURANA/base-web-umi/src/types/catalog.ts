@@ -23,9 +23,15 @@ export interface ProductType {
 
   images: string[];
 
+  image?: string;
+
   active: boolean;
 
   variants?: VariantType[];
+
+  categoryId?: number;
+
+  skinTypeId?: number;
 }
 
 export interface VariantType {

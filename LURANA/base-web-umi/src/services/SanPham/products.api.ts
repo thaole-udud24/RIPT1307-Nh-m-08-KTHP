@@ -6,6 +6,34 @@ import {
   MOCK_PRODUCTS,
 } from '../../../mock/catalog';
 
+// =========================
+// NORMALIZE PRODUCT
+// =========================
+
+const normalizeProduct = (
+  product: any,
+): ProductType => {
+
+  return {
+
+    ...product,
+
+    image:
+      product.image ||
+      product.thumbnail ||
+      '',
+
+    price:
+      Number(product.price) || 0,
+
+    stock:
+      Number(product.stock) || 0,
+
+    variants:
+      product.variants || [],
+  };
+};
+
 const PRODUCT_KEY = 'products';
 
 // =========================
@@ -48,9 +76,14 @@ const getStoredProducts =
           PRODUCT_KEY,
         );
 
-      return products
-        ? JSON.parse(products)
-        : [];
+      const parsedProducts =
+        products
+          ? JSON.parse(products)
+          : [];
+
+      return parsedProducts.map(
+        normalizeProduct,
+      );
     } catch (error) {
       console.error(
         'Parse products error:',
@@ -98,6 +131,30 @@ export async function getAdminProducts(): Promise<
       message:
         'Không thể tải danh sách sản phẩm',
     };
+  }
+}
+
+// =========================
+// GET PRODUCTS
+// PUBLIC FOR SHOP/PROMOTION
+// =========================
+
+export async function getProducts(): Promise<
+  ProductType[]
+> {
+
+  try {
+
+    return getStoredProducts();
+
+  } catch (error) {
+
+    console.error(
+      'Get products error:',
+      error,
+    );
+
+    return [];
   }
 }
 
@@ -156,7 +213,7 @@ export async function createProduct(
       getStoredProducts();
 
     const newProduct: ProductType =
-      {
+      normalizeProduct({
         ...product,
 
         id:
@@ -165,7 +222,7 @@ export async function createProduct(
 
         variants:
           product.variants || [],
-      };
+      });
 
     const updatedProducts = [
       newProduct,
@@ -221,10 +278,11 @@ export async function updateProduct(
         if (
           item.id === productId
         ) {
-          updatedProduct = {
-            ...item,
-            ...payload,
-          };
+          updatedProduct =
+            normalizeProduct({
+              ...item,
+              ...payload,
+            });
 
           return updatedProduct;
         }

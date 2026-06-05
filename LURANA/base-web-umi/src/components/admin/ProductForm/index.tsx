@@ -44,6 +44,7 @@ import {
   type SkinTypeType,
 } from '@/services/DanhMuc/skinTypes.api';
 
+
 import VariantEditor from '@/pages/admin/Products/components/VariantEditor';
 import ProductImageUpload from '@/pages/admin/Products/components/ProductImageUpload';
 
@@ -193,9 +194,8 @@ export default function ProductForm({
         const res =
           await getSkinTypes();
 
-        setSkinTypes(
-          res.data || [],
-        );
+        setSkinTypes(res || []);
+
       } catch (error) {
         message.error(
           'Không thể tải loại da',
@@ -253,11 +253,9 @@ export default function ProductForm({
 
       name: formValues.name || '',
 
-      category:
-        formValues.category || '',
+      categoryId: formValues.category,
 
-      skinType:
-        formValues.skinType || '',
+      skinTypeId: formValues.skinType,
 
       description:
         formValues.description || '',
@@ -412,8 +410,7 @@ export default function ProductForm({
             </h3>
 
             <p>
-              Thêm mô tả cho sản
-              phẩm.
+              Thêm mô tả cho sản phẩm.
             </p>
           </div>
 
@@ -439,21 +436,23 @@ export default function ProductForm({
                 <Form.Item
                   label="Loại da"
                   name="skinType"
+                  rules={[
+                    {
+                      required: true,
+                      message:
+                        'Vui lòng chọn loại da',
+                    },
+                  ]}
                 >
                   <Select
                     disabled={isDetailMode}
                     placeholder="Chọn loại da"
-                    options={skinTypes.map(
-                      (
-                        item,
-                      ) => ({
-                        label:
-                          item.name,
-                        value:
-                          item.name,
-                      }),
-                    )}
+                    options={skinTypes.map((item) => ({
+                      label: item.name,
+                      value: item.id,
+                    }))}
                   />
+
                 </Form.Item>
               </Col>
             </Row>
@@ -461,6 +460,13 @@ export default function ProductForm({
             <Form.Item
               label="Loại sản phẩm"
               name="category"
+              rules={[
+                {
+                  required: true,
+                  message:
+                    'Vui lòng chọn loại sản phẩm',
+                },
+              ]}
             >
               <Select
                 disabled={isDetailMode}
@@ -468,7 +474,7 @@ export default function ProductForm({
                 options={categories.map(
                   (item) => ({
                     label: item.name,
-                    value: item.name,
+                    value: item.id,
                   }),
                 )}
               />
@@ -488,8 +494,7 @@ export default function ProductForm({
             </h3>
 
             <p>
-              Quản lý số lượng
-              tồn kho.
+              Nhập số lượng tồn kho hiện tại và mức tồn kho tối thiểu để nhận cảnh báo khi hàng sắp hết
             </p>
           </div>
 
@@ -556,7 +561,7 @@ export default function ProductForm({
           </h3>
 
           <p>
-            Dùng cho sản phẩm mặc định.
+            Để tính chính xác chi phí vận chuyển. 
           </p>
         </div>
 
@@ -599,8 +604,7 @@ export default function ProductForm({
             </h3>
 
             <p>
-              Quản lý giá bán và
-              lợi nhuận.
+              Việc nhập giá chính xác là cơ sở để quản lý doanh thu và áp dụng các chương trình chiết khấu sau này.
             </p>
           </div>
 
@@ -682,8 +686,7 @@ export default function ProductForm({
               <h3>Mô tả</h3>
 
               <p>
-                Mô tả ngắn về sản
-                phẩm.
+                Viết một đoạn ngắn gọn về đặc điểm nổi bật và công dụng chính của sản phẩm để thu hút sự chú ý của khách hàng.
               </p>
             </div>
 
@@ -713,8 +716,7 @@ export default function ProductForm({
               </h3>
 
               <p>
-                Thông tin sử dụng,
-                thành phần...
+                Đây là phần quan trọng giúp khách hàng yên tâm về độ an toàn và hiểu rõ quy trình sử dụng sản phẩm để đạt hiệu quả tốt nhất.
               </p>
             </div>
 
@@ -760,8 +762,7 @@ export default function ProductForm({
         </h1>
 
         <p>
-          Vui lòng hoàn thành
-          biểu mẫu sản phẩm
+          Vui lòng hoàn thành theo biểu mẫu dưới đây để thêm dữ liệu
         </p>
       </div>
 
@@ -830,7 +831,7 @@ export default function ProductForm({
                 </h3>
 
                 <p>
-                  Tải ảnh sản phẩm.
+                  Tải lên hình ảnh rõ nét của sản phẩm. Nên có ít nhất một ảnh chụp chính diện bao bì và một ảnh chụp thực tế chất kem/tinh chất bên trong
                 </p>
               </div>
 

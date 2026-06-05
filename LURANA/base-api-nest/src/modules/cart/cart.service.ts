@@ -5,20 +5,43 @@ import { Cart } from './schemas/cart.schema';
 import { ProductsService } from '../catalog/products.service';
 import { AddToCartDto } from './dto/add-to-cart.dto';
 import { UpdateCartItemDto } from './dto/update-cart-item.dto';
+import { PromotionsService } from '../promotions/promotions.service';
 
 @Injectable()
 export class CartService {
   constructor(
     @InjectModel(Cart.name) private cartModel: Model<Cart>,
     private productService: ProductsService,
+    private promotionsService: PromotionsService, // <-- Đã inject
   ) {}
 
   async getCart(userId: string) {
     const cart = await this.cartModel
       .findOne({ userId: new Types.ObjectId(userId) })
-      .populate('items.productId', 'name mainImage variants');
+      .populate('items.productId', 'name mainImage variants')
+      .exec();
     
-    return cart || { userId, items: [] };
+    if (!cart) return { userId, items: [] };
+
+    const cartObj = cart.toObject();
+
+    // Duyệt qua giỏ hàng để map lại giá gốc & giá Sale cho FE hiển thị
+    cartObj.items = await Promise.all(cartObj.items.map(async (item: any) => {
+      if (item.productId && item.productId.variants) {
+        const variant = item.productId.variants.find((v: any) => v.variantName === item.variantName);
+        if (variant) {
+          const activePrice = await this.promotionsService.calculateActivePrice(
+            item.productId._id.toString(), 
+            variant.priceSell
+          );
+          item.priceSell = activePrice;
+          item.originalPrice = variant.priceSell;
+        }
+      }
+      return item;
+    }));
+
+    return cartObj;
   }
 
   async addToCart(userId: string, dto: AddToCartDto) {
@@ -35,7 +58,6 @@ export class CartService {
       throw new BadRequestException('Sản phẩm không đủ tồn kho');
     }
 
-    // Luôn bọc userId vào ObjectId
     let cart = await this.cartModel.findOne({ userId: new Types.ObjectId(userId) });
     if (!cart) {
       cart = new this.cartModel({ userId: new Types.ObjectId(userId), items: [] });

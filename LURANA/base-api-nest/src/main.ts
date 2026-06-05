@@ -1,3 +1,5 @@
+import * as crypto from 'crypto';
+Object.assign(globalThis, { crypto: crypto.webcrypto });
 import { ValidationPipe } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import cookieParser from 'cookie-parser';
@@ -12,6 +14,7 @@ async function bootstrap() {
     origin: true,
     credentials: true,
   });
+  app.setGlobalPrefix('api');
 
   app.useGlobalPipes(
     new ValidationPipe({
