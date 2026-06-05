@@ -47,14 +47,14 @@ const HeaderSearch: React.FC = () => {
 
   return (
     <div className="search-box">
+      <SearchOutlined className="search-icon" onClick={handleSearch} style={{ cursor: 'pointer' }} />
       <input
         type="text"
-        placeholder="Nhập từ khóa tìm kiếm"
+        placeholder="Tìm kiếm nhanh..."
         value={val}
         onChange={(e) => setVal(e.target.value)}
         onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
       />
-      <button className="search-btn" onClick={handleSearch}><SearchOutlined /></button>
     </div>
   );
 };
@@ -100,11 +100,13 @@ const ShopLayout: React.FC = ({ children }) => {
       } else {
         setCurrentUser(null);
       }
-      const notifs = localStorage.getItem('lunaria_notifications');
+      const notifs = localStorage.getItem('lunaria_notifications_v2');
       if (notifs) {
         const parsed = JSON.parse(notifs);
         const count = parsed.filter((n: any) => !n.isRead).length;
         setUnreadCount(count);
+      } else {
+        setUnreadCount(0);
       }
     } catch (e) {
       setCurrentUser(null);
@@ -155,7 +157,7 @@ const ShopLayout: React.FC = ({ children }) => {
                     <div className="mega-grid-row">
                       <div className="mega-col">
                         <a onClick={() => handleQuickTab('Làm sạch da')} className="mega-col-heading" style={{ cursor: 'pointer' }}>
-                          LÀM SẠCH DA <span className="heading-arrow">›</span>
+                          Làm sạch da <span className="heading-arrow">›</span>
                         </a>
                         <div className="mega-sub-list">
                           <a onClick={() => handleQuickSearch('Tẩy trang')}>Tẩy trang</a>
@@ -167,7 +169,7 @@ const ShopLayout: React.FC = ({ children }) => {
 
                       <div className="mega-col">
                         <a onClick={() => handleQuickTab('Cân bằng da')} className="mega-col-heading" style={{ cursor: 'pointer' }}>
-                          CÂN BẰNG DA <span className="heading-arrow">›</span>
+                          Cân bằng da <span className="heading-arrow">›</span>
                         </a>
                         <div className="mega-sub-list">
                           <a onClick={() => handleQuickSearch('Toner dưỡng ẩm')}>Toner dưỡng ẩm</a>
@@ -179,7 +181,7 @@ const ShopLayout: React.FC = ({ children }) => {
 
                       <div className="mega-col">
                         <a onClick={() => handleQuickTab('Dưỡng ẩm')} className="mega-col-heading" style={{ cursor: 'pointer' }}>
-                          DƯỠNG ẨM <span className="heading-arrow">›</span>
+                          Dưỡng ẩm <span className="heading-arrow">›</span>
                         </a>
                         <div className="mega-sub-list">
                           <a onClick={() => handleQuickSearch('Serum cấp nước')}>Serum cấp nước</a>
@@ -192,7 +194,7 @@ const ShopLayout: React.FC = ({ children }) => {
 
                       <div className="mega-col">
                         <a onClick={() => handleQuickTab('Chống nắng')} className="mega-col-heading" style={{ cursor: 'pointer' }}>
-                          CHỐNG NẮNG <span className="heading-arrow">›</span>
+                          Chống nắng <span className="heading-arrow">›</span>
                         </a>
                         <div className="mega-sub-list">
                           <a onClick={() => handleQuickSearch('Kem chống nắng SPF 30')}>Kem chống nắng SPF 30</a>
@@ -207,7 +209,7 @@ const ShopLayout: React.FC = ({ children }) => {
                     <div className="mega-grid-row bottom-row">
                       <div className="mega-col">
                         <a onClick={() => handleQuickTab('Phục hồi')} className="mega-col-heading" style={{ cursor: 'pointer' }}>
-                          PHỤC HỒI DA <span className="heading-arrow">›</span>
+                          Phục hồi da <span className="heading-arrow">›</span>
                         </a>
                         <div className="mega-sub-list">
                           <a onClick={() => handleQuickSearch('Mặt nạ phục hồi')}>Mặt nạ phục hồi</a>
@@ -219,7 +221,7 @@ const ShopLayout: React.FC = ({ children }) => {
 
                       <div className="mega-col">
                         <a onClick={() => handleQuickTab('Tất cả')} className="mega-col-heading" style={{ cursor: 'pointer' }}>
-                          BỘ SẢN PHẨM <span className="heading-arrow">›</span>
+                          Bộ sản phẩm <span className="heading-arrow">›</span>
                         </a>
                         <div className="mega-sub-list">
                           <a onClick={() => handleQuickSearch('Bộ làm sạch sâu')}>Bộ làm sạch sâu</a>
@@ -231,7 +233,7 @@ const ShopLayout: React.FC = ({ children }) => {
 
                       <div className="mega-col">
                         <a onClick={() => handleQuickTab('Tất cả')} className="mega-col-heading" style={{ cursor: 'pointer' }}>
-                          QUÀ TẶNG <span className="heading-arrow">›</span>
+                          Quà tặng <span className="heading-arrow">›</span>
                         </a>
                         <div className="mega-sub-list">
                           <a onClick={() => handleQuickSearch('Set quà tặng dưới 500K')}>Set quà tặng dưới 500K</a>
@@ -284,7 +286,7 @@ const ShopLayout: React.FC = ({ children }) => {
           
           <div className="header-center logo">
             <img src={getImg('logo-lunaria.png')} alt="LUNARIA Logo" style={{ height: '40px', objectFit: 'contain' }} />
-            LUNARIA
+            <span className="logo-text">Lunaria</span>
           </div>
 
           <div className="header-right header-actions">
@@ -362,7 +364,7 @@ const ShopLayout: React.FC = ({ children }) => {
           <div className="footer-col brand-info">
             <div className="logo">
               <img src={getImg('logo-lunaria-footer.png')} alt="LUNARIA Logo" style={{ height: '40px', objectFit: 'contain', marginBottom: '10px' }} />
-              LUNARIA
+              <span className="logo-text">Lunaria</span>
             </div>
             <p className="brand-desc">Thương hiệu mỹ phẩm thiên nhiên hàng đầu, mang đến vẻ đẹp thuần khiết và an toàn cho làn da của bạn.</p>
             <div className="work-hours">

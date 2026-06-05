@@ -1,6 +1,13 @@
 import React from 'react';
 import { NotificationItemData } from '../types';
-import { DeleteOutlined, EyeOutlined, CheckOutlined } from '@ant-design/icons';
+import {
+  DeleteOutlined,
+  EyeOutlined,
+  CheckOutlined,
+  ShoppingOutlined,
+  GiftOutlined,
+  SettingOutlined,
+} from '@ant-design/icons';
 
 interface NotificationItemProps {
   item: NotificationItemData;
@@ -18,12 +25,12 @@ const NotificationItem: React.FC<NotificationItemProps> = ({
   const getCategoryIcon = (category: string) => {
     switch (category) {
       case 'ORDER':
-        return '📦';
+        return <ShoppingOutlined />;
       case 'PROMOTION':
-        return '🎁';
+        return <GiftOutlined />;
       case 'SYSTEM':
       default:
-        return '⚙️';
+        return <SettingOutlined />;
     }
   };
 

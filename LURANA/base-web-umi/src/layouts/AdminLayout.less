@@ -13,6 +13,18 @@
   to { opacity: 1; transform: translateY(0); }
 }
 
+@keyframes logo-gradient {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
 .admin-layout {
   display: flex;
   height: 100vh;
@@ -75,10 +87,13 @@
   .logo-text {
     font-size: 24px;
     font-weight: 800;
-    background: linear-gradient(135deg, #e63946, @primary-color);
+    background: linear-gradient(120deg, #e63946, #ff9a7a, #ff4d4f, #e63946);
+    background-size: 200% auto;
+    animation: logo-gradient 4s linear infinite;
     -webkit-background-clip: text;
     background-clip: text;
     -webkit-text-fill-color: transparent;
+    color: transparent;
     letter-spacing: -0.5px;
   }
 }

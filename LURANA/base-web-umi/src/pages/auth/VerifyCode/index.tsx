@@ -2,6 +2,7 @@ import React, { useState, useRef } from 'react';
 import { history, useLocation } from 'umi';
 import { message } from 'antd';
 import { verifyCode, resendCode } from '@/services/TaiKhoan/auth.api';
+import { ArrowLeftOutlined, StarFilled } from '@ant-design/icons';
 
 export default function VerifyCode() {
   const [otp, setOtp] = useState(['', '', '', '']);
@@ -71,38 +72,57 @@ export default function VerifyCode() {
   };
 
   return (
-    <div className="auth-page">
+    <div className="auth-page verify-code">
       <div className="auth-container">
-
-        {/* LEFT */}
+        {/* LEFT PANEL */}
         <div className="auth-left">
+          <div className="auth-shapes">
+            <div className="shape shape-1"></div>
+            <div className="shape shape-2"></div>
+            <div className="shape shape-3"></div>
+          </div>
           <div className="auth-overlay">
-            <h1>LUNARIA</h1>
+            <h1 className="logo-animated-text">LUNARIA</h1>
             <p>
-              Chúng tôi đã gửi mã xác nhận đến email của bạn.
+              Chúng tôi đã gửi mã xác nhận đến hòm thư Email của bạn để đảm bảo an toàn tài khoản.
             </p>
-            <button>Mua ngay</button>
+            <div className="auth-features">
+              <div className="feature-item">
+                <StarFilled className="feature-icon" />
+                <span>100% Nguyên liệu hữu cơ lành tính</span>
+              </div>
+              <div className="feature-item">
+                <StarFilled className="feature-icon" />
+                <span>Công thức sinh học tiên tiến độc quyền</span>
+              </div>
+              <div className="feature-item">
+                <StarFilled className="feature-icon" />
+                <span>Nuôi dưỡng làn da căng mọng tự nhiên</span>
+              </div>
+            </div>
+            <button className="auth-explore-btn" onClick={() => history.push('/products')}>Mua ngay</button>
           </div>
         </div>
 
-        {/* RIGHT */}
+        {/* RIGHT PANEL */}
         <div className="auth-right">
           <div className="auth-form">
+            <div className="auth-top">
+              <button
+                className="auth-back"
+                onClick={() => history.push('/auth/forgot-password')}
+              >
+                <ArrowLeftOutlined /> Quay lại
+              </button>
+            </div>
 
-            <button
-              className="auth-back"
-              onClick={() => history.push('/auth/forgot-password')}
-            >
-              ← Trở lại
-            </button>
-
-            <h2>Enter Code</h2>
+            <h2>Xác thực tài khoản</h2>
             <p className="auth-desc">
-              Chúng tôi đã gửi mã xác nhận vào email của bạn
+              Nhập mã OTP gồm 4 chữ số được gửi tới Email của bạn
             </p>
 
             {/* OTP INPUT */}
-            <div style={{ display: 'flex', gap: 10, marginBottom: 20 }}>
+            <div style={{ display: 'flex', gap: 12, justifyContent: 'center', marginBottom: 24 }}>
               {otp.map((digit, index) => (
                 <input
                   key={index}
@@ -111,53 +131,77 @@ export default function VerifyCode() {
                   onChange={(e) => handleChange(e.target.value, index)}
                   maxLength={1}
                   style={{
-                    width: 60,
-                    height: 60,
+                    width: 56,
+                    height: 56,
                     textAlign: 'center',
-                    fontSize: 20,
+                    fontSize: 22,
+                    fontWeight: 700,
+                    borderRadius: 12,
+                    border: '1.5px solid #e2e8f0',
+                    background: '#f8fafc',
+                    color: '#1e293b',
+                    margin: 0,
+                    transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)'
                   }}
+                  className="otp-input-box"
                 />
               ))}
             </div>
 
-            <input
-              placeholder="Email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-            />
+            <div className="input-group">
+              <input
+                placeholder="Email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                disabled
+                style={{ cursor: 'not-allowed', opacity: 0.7 }}
+              />
+            </div>
 
             <button
               className="auth-loginBtn"
               onClick={handleSubmit}
               disabled={loading}
             >
-              {loading ? 'Đang xác thực...' : 'Thiết lập lại mật khẩu'}
+              {loading ? 'Đang xác thực...' : 'Xác thực mã OTP'}
             </button>
 
             <button
               style={{
                 width: '100%',
-                marginTop: 10,
-                padding: 10,
-                border: '1px solid #ccc',
+                height: 48,
+                marginTop: 12,
+                borderRadius: 12,
+                border: '1.5px solid #e2e8f0',
                 background: '#fff',
+                color: '#64748b',
+                fontWeight: 600,
                 cursor: 'pointer',
+                transition: 'all 0.3s'
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.borderColor = '#FFA78A';
+                e.currentTarget.style.color = '#FFA78A';
+                e.currentTarget.style.background = '#fff5f2';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.borderColor = '#e2e8f0';
+                e.currentTarget.style.color = '#64748b';
+                e.currentTarget.style.background = '#fff';
               }}
               onClick={handleResend}
             >
-              Gửi lại
+              Gửi lại mã xác nhận
             </button>
 
             <p className="auth-register">
-              Trở lại?{' '}
+              Nhầm lẫn?{' '}
               <span onClick={() => history.push('/auth/login')}>
                 Đăng nhập
               </span>
             </p>
-
           </div>
         </div>
-
       </div>
     </div>
   );
