@@ -1,6 +1,6 @@
 import React, { useRef, useState } from 'react';
-import { Carousel, Pagination } from 'antd';
-import { HeartFilled, StarFilled, LeftOutlined, RightOutlined } from '@ant-design/icons';
+import { Carousel, Pagination, message } from 'antd';
+import { HeartFilled, HeartOutlined, StarFilled, LeftOutlined, RightOutlined } from '@ant-design/icons';
 import { history } from 'umi';
 import { getImg } from '../utils';
 
@@ -20,6 +20,28 @@ const generateProducts = (count: number) =>
     rating: (4 + Math.random()).toFixed(1),
     img: `anh-san-pham-${(idx % 8) + 1}.png`,
   }));
+
+const HeartButton: React.FC<{ onClick: (e: React.MouseEvent) => void }> = ({ onClick }) => {
+  const [active, setActive] = useState(false);
+  const [hovered, setHovered] = useState(false);
+
+  const handleClick = (e: React.MouseEvent) => {
+    onClick(e);
+    setActive(true);
+  };
+
+  return (
+    <div 
+      className="heart-icon" 
+      onClick={handleClick}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+      style={{ cursor: 'pointer' }}
+    >
+      {active || hovered ? <HeartFilled style={{ color: '#ff8e73' }} /> : <HeartOutlined style={{ color: '#ffa78a' }} />}
+    </div>
+  );
+};
 
 const ProductCarouselSection: React.FC<ProductCarouselSectionProps> = ({ title, searchQuery }) => {
   const carouselRef = useRef<any>(null);
@@ -42,10 +64,39 @@ const ProductCarouselSection: React.FC<ProductCarouselSectionProps> = ({ title, 
     setCurrentPage(1);
   };
 
+  const handleAddToCart = (e: React.MouseEvent, p: typeof allProducts[0]) => {
+    e.stopPropagation();
+    try {
+      const stored = localStorage.getItem('lunaria_cart_items');
+      const cartItems: any[] = stored ? JSON.parse(stored) : [];
+      const priceNum = parseInt(p.price.replace(/[^0-9]/g, ''), 10);
+      const existingIdx = cartItems.findIndex((item) => item.name === p.name);
+      
+      if (existingIdx > -1) {
+        cartItems[existingIdx].qty += 1;
+      } else {
+        cartItems.push({
+          id: Date.now(),
+          name: p.name,
+          variant: 'Mặc định',
+          price: priceNum,
+          qty: 1,
+          img: p.img,
+        });
+      }
+      
+      localStorage.setItem('lunaria_cart_items', JSON.stringify(cartItems));
+      window.dispatchEvent(new Event('cartUpdate'));
+      message.success(`Đã thêm sản phẩm "${p.name}" vào giỏ hàng!`);
+    } catch (err) {
+      message.error('Lỗi khi thêm sản phẩm vào giỏ hàng');
+    }
+  };
+
   const ProductCard = ({ p }: { p: typeof allProducts[0] }) => (
     <div className="shop2-product-card" onClick={() => history.push(`/products/${p.id}`)} style={{ cursor: 'pointer' }}>
       <div className="card-top">
-        <div className="heart-icon"><HeartFilled /></div>
+        <HeartButton onClick={(e) => handleAddToCart(e, p)} />
         <div className="rating-badge"><StarFilled /> {p.rating}</div>
       </div>
       <div className="card-img-container">

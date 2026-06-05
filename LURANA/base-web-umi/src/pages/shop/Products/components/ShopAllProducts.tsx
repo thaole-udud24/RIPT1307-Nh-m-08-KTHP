@@ -21,7 +21,7 @@ const HeartButton: React.FC<{ onClick: (e: React.MouseEvent) => void }> = ({ onC
       onMouseLeave={() => setHovered(false)}
       style={{ cursor: 'pointer' }}
     >
-      {active || hovered ? <HeartFilled /> : <HeartOutlined />}
+      {active || hovered ? <HeartFilled style={{ color: '#ff8e73' }} /> : <HeartOutlined style={{ color: '#ffa78a' }} />}
     </div>
   );
 };
