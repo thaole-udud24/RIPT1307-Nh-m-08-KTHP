@@ -1,5 +1,5 @@
-@primary-color: #ff9a7a;
-@primary-hover: #e88768;
+@layout-primary: #ff9a7a;
+@layout-primary-hover: #e88768;
 @text-color: #333333;
 @light-peach: #fff5f2;
 @hover-peach: #ffebe5;
@@ -65,13 +65,13 @@
             height: 2px;
             bottom: -4px;
             left: 50%;
-            background-color: @primary-color;
+            background-color: @layout-primary;
             transition: all 0.3s ease;
             transform: translateX(-50%);
           }
 
           &:hover, &.active {
-            color: @primary-color;
+            color: @layout-primary;
             &::after {
               width: 100%;
             }
@@ -166,7 +166,7 @@
 
                     .heading-arrow {
                       font-size: 16px;
-                      color: @primary-color;
+                      color: @layout-primary;
                       transition: transform 0.3s, opacity 0.3s;
                       opacity: 0;
                       transform: translateX(-5px);
@@ -175,7 +175,7 @@
                     &::after { display: none; } /* Tắt hiệu ứng gạch chân của nav link */
 
                     &:hover {
-                      color: @primary-color;
+                      color: @layout-primary;
                       .heading-arrow {
                         opacity: 1;
                         transform: translateX(2px);
@@ -203,7 +203,7 @@
                       &::after { display: none; } /* Tắt hiệu ứng gạch chân của nav link */
 
                       &:hover {
-                        color: @primary-color;
+                        color: @layout-primary;
                         background: #fff5f2;
                         transform: translateX(6px);
                       }
@@ -220,7 +220,7 @@
 
                 a {
                   color: #fff;
-                  background: @primary-color;
+                  background: @layout-primary;
                   padding: 14px 40px;
                   border-radius: 30px;
                   font-weight: 700;
@@ -361,7 +361,7 @@
             transition: color 0.3s ease;
 
             &:hover {
-              color: @primary-color;
+              color: @layout-primary;
             }
           }
 
@@ -447,14 +447,14 @@
 
         .action-icon {
           font-size: 22px;
-          color: @primary-color;
+          color: @layout-primary;
           cursor: pointer;
           transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
           display: flex;
           align-items: center;
 
           &:hover {
-            color: @primary-hover;
+            color: @layout-primary-hover;
             transform: translateY(-2px);
           }
         }
@@ -484,7 +484,7 @@
             background: #fff;
             box-shadow: 0 16px 50px rgba(0,0,0,0.12);
             border-radius: 20px;
-            border-top: 4px solid @primary-color;
+            border-top: 4px solid @layout-primary;
             opacity: 0;
             visibility: hidden;
             transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
@@ -530,7 +530,7 @@
               }
 
               .btn-login {
-                background: @primary-color;
+                background: @layout-primary;
                 color: #fff;
                 box-shadow: 0 4px 15px rgba(255,154,122,0.25);
 
@@ -543,8 +543,8 @@
 
               .btn-register {
                 background: #fff;
-                border: 2px solid @primary-color;
-                color: @primary-color;
+                border: 2px solid @layout-primary;
+                color: @layout-primary;
 
                 &:hover {
                   background: #fff5f2;
@@ -563,7 +563,7 @@
 
               .avatar {
                 font-size: 24px;
-                color: @primary-color;
+                color: @layout-primary;
                 background: #fff5f2;
                 width: 56px;
                 height: 56px;
@@ -571,7 +571,7 @@
                 display: flex;
                 align-items: center;
                 justify-content: center;
-                border: 2px solid @primary-color;
+                border: 2px solid @layout-primary;
               }
 
               .user-info {
@@ -585,7 +585,7 @@
                 span {
                   font-size: 11px;
                   color: #fff;
-                  background: @primary-color;
+                  background: @layout-primary;
                   padding: 3px 10px;
                   border-radius: 12px;
                   font-weight: 600;
@@ -621,11 +621,11 @@
 
                 &:hover {
                   background: #fff5f2;
-                  color: @primary-color;
+                  color: @layout-primary;
                   transform: translateX(4px);
                   
                   .icon {
-                    color: @primary-color;
+                    color: @layout-primary;
                   }
                 }
 
@@ -672,7 +672,7 @@
 
       .footer-col {
         h4 { 
-          color: @primary-color; 
+          color: @layout-primary; 
           margin-bottom: 25px; 
           font-weight: 700;
           font-size: 16px;
@@ -734,7 +734,7 @@
               display: inline-block;
 
               &:hover { 
-                color: @primary-color; 
+                color: @layout-primary; 
                 transform: translateX(5px);
               }
             }
@@ -752,7 +752,7 @@
           font-size: 14px;
           
           .anticon {
-            color: @primary-color;
+            color: @layout-primary;
             font-size: 18px;
             background: #fff;
             padding: 8px;
@@ -784,7 +784,7 @@
 
             button {
               width: 50px;
-              background: @primary-color;
+              background: @layout-primary;
               border: none;
               color: #fff;
               cursor: pointer;
@@ -807,7 +807,7 @@
             height: 38px;
             border-radius: 50%;
             background: #fff;
-            color: @primary-color;
+            color: @layout-primary;
             display: flex;
             align-items: center;
             justify-content: center;
@@ -817,7 +817,7 @@
             box-shadow: 0 4px 10px rgba(0,0,0,0.05);
             
             &:hover {
-              background: @primary-color;
+              background: @layout-primary;
               color: #fff;
               transform: translateY(-3px) scale(1.1);
               box-shadow: 0 6px 15px rgba(255, 184, 184, 0.4);
@@ -948,4 +948,4 @@
       padding: 40px 5% 20px;
     }
   }
-}
+}

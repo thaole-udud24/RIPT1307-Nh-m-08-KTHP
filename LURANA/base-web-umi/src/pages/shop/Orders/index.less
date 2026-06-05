@@ -1,6 +1,6 @@
-@primary-color: #ff9a7a;
-@primary-hover: #e88768;
-@secondary-color: #fff5f2;
+@ord-primary: #ff9a7a;
+@ord-primary-hover: #e88768;
+@ord-secondary: #fff5f2;
 @text-color: #333333;
 @border-color: #eeeeee;
 
@@ -24,8 +24,15 @@
     h1 {
       font-size: 32px;
       font-weight: 800;
-      color: #222222;
+      background: linear-gradient(120deg, #e63946, #ff9a7a, #ff4d4f, #e63946);
+      background-size: 200% auto;
+      -webkit-background-clip: text;
+      background-clip: text;
+      -webkit-text-fill-color: transparent;
+      color: transparent;
+      animation: logo-gradient 4s linear infinite;
       margin: 0 0 12px;
+      display: inline-block;
     }
 
     p {
@@ -76,18 +83,18 @@
       }
 
       &:hover {
-        color: @primary-color;
+        color: @ord-primary;
         background: #fffaf8;
       }
 
       &.active {
-        background: @primary-color;
+        background: @ord-primary;
         color: #ffffff;
         box-shadow: 0 4px 15px rgba(255, 154, 122, 0.25);
 
         .tab-badge {
           background: #ffffff;
-          color: @primary-color;
+          color: @ord-primary;
         }
       }
     }
@@ -127,7 +134,7 @@
         background: #fcfcfc;
 
         &:focus {
-          border-color: @primary-color;
+          border-color: @ord-primary;
           background: #ffffff;
           box-shadow: 0 0 0 3px rgba(255, 154, 122, 0.15);
         }
@@ -199,7 +206,7 @@
           .order-code {
             font-size: 18px;
             font-weight: 700;
-            color: @primary-color;
+            color: @ord-primary;
           }
 
           .order-date {
@@ -305,7 +312,7 @@
           .total-amount {
             font-size: 22px;
             font-weight: 800;
-            color: @primary-color;
+            color: @ord-primary;
           }
         }
 
@@ -340,23 +347,23 @@
 
             &.btn-reorder {
               background: #ffffff;
-              border: 1px solid @primary-color;
-              color: @primary-color;
+              border: 1px solid @ord-primary;
+              color: @ord-primary;
 
               &:hover {
-                background: @primary-color;
+                background: @ord-primary;
                 color: #ffffff;
               }
             }
 
             &.btn-detail {
-              background: @primary-color;
+              background: @ord-primary;
               border: none;
               color: #ffffff;
               box-shadow: 0 4px 15px rgba(255, 154, 122, 0.3);
 
               &:hover {
-                background: @primary-hover;
+                background: @ord-primary-hover;
                 transform: translateY(-2px);
               }
             }

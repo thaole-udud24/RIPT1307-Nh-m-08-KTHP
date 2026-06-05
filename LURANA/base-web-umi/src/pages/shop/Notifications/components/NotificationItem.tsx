@@ -44,7 +44,7 @@ const NotificationItem: React.FC<NotificationItemProps> = ({
 
         <div className="content-container">
           <div className="top-meta">
-            <span className="cat-tag">{item.category === 'ORDER' ? 'Đơn hàng' : item.category === 'PROMOTION' ? 'Khuyến mãi' : 'Hệ thống'}</span>
+            <span className={`cat-tag ${item.category.toLowerCase()}`}>{item.category === 'ORDER' ? 'Đơn hàng' : item.category === 'PROMOTION' ? 'Khuyến mãi' : 'Hệ thống'}</span>
             <span className="time-text">{item.date} • {item.time}</span>
           </div>
 

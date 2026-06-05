@@ -28,16 +28,16 @@ const OrdersTab: React.FC<OrdersTabProps> = ({ orders }) => {
           <tbody>
             {orders.map((order) => (
               <tr key={order.id}>
-                <td><strong className="order-code">{order.orderCode}</strong></td>
-                <td>{order.date}</td>
-                <td>
+                <td data-label="Mã đơn hàng"><strong className="order-code">{order.orderCode}</strong></td>
+                <td data-label="Ngày đặt">{order.date}</td>
+                <td data-label="Sản phẩm">
                   <div className="order-product-info">
                     <p>{order.productName}</p>
                     {order.itemCount > 1 && <span>và {order.itemCount - 1} sản phẩm khác</span>}
                   </div>
                 </td>
-                <td className="total-col">{order.total.toLocaleString('vi-VN')}đ</td>
-                <td>
+                <td data-label="Tổng tiền" className="total-col">{order.total.toLocaleString('vi-VN')}đ</td>
+                <td data-label="Trạng thái">
                   {order.status === 'COMPLETED' && <span className="status-badge completed">Đã giao hàng</span>}
                   {order.status === 'DELIVERING' && <span className="status-badge delivering">Đang vận chuyển</span>}
                   {order.status === 'CANCELLED' && <span className="status-badge cancelled">Đã hủy</span>}

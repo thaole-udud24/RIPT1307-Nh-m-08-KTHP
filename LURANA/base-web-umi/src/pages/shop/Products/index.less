@@ -44,31 +44,42 @@
   /* 1. Category Tabs */
 
   .category-tabs-container {
-    background: @secondary-color;
-    padding: 15px 0;
+    background: #ffffff;
+    padding: 20px 0;
     margin-bottom: 30px;
-    position: sticky;
-    top: 120px; /* Dưới fixed header khi scroll qua banner */
-    z-index: 99;
-    box-shadow: 0 4px 6px -4px rgba(0,0,0,0.05);
+    border-bottom: 1px solid rgba(255, 154, 122, 0.15);
+    position: relative;
+    top: auto;
+    z-index: 5;
+    box-shadow: none;
     
     .category-tabs {
       display: flex;
       justify-content: center;
-      gap: 50px;
+      gap: 32px;
+      flex-wrap: wrap;
 
       .cat-tab {
-        font-size: 16px;
+        font-size: 15px;
         font-weight: 500;
-        color: @text-color;
+        color: #555555;
         cursor: pointer;
         padding: 8px 24px;
-        border-radius: 20px;
-        transition: all 0.3s;
+        border-radius: 30px;
+        border: 1px solid transparent;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 
-        &:hover, &.active {
-          background: @primary-color;
-          color: #fff;
+        &:hover {
+          color: #e88768;
+          background: rgba(255, 154, 122, 0.08);
+        }
+
+        &.active {
+          background: #ff9a7a;
+          color: #ffffff;
+          font-weight: 600;
+          border-color: #ff9a7a;
+          box-shadow: 0 4px 15px rgba(255, 154, 122, 0.25);
         }
       }
     }
