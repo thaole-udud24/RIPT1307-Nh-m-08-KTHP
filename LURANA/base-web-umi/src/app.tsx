@@ -1,77 +1,101 @@
 import { history } from 'umi';
 import '@/styles/global.less';
 import '@/styles/admin.less';
+import { getMe } from '@/services/TaiKhoan/users.api';
 
-// =========================
-// LAYOUT
-// =========================
-
+// ==========================================
+// 1. CONFIG LAYOUT (Tắt Layout mặc định của Umi Pro)
+// ==========================================
 export function layout(props: any) {
-  const pathname =
-    props?.location?.pathname || '';
-
-  // Auth và Admin tự dùng layout riêng
-  if (
-    pathname.startsWith('/auth') ||
-    pathname.startsWith('/admin')
-  ) {
-    return {
-      layout: false,
-    };
+  const pathname = props?.location?.pathname || '';
+  if (pathname.startsWith('/auth') || pathname.startsWith('/admin')) {
+    return { layout: false };
   }
-
   return {};
 }
 
-// =========================
-// INITIAL STATE
-// =========================
-
+// ==========================================
+// 2. GLOBAL INITIAL STATE TYPES
+// ==========================================
 export interface InitialState {
-  user?: {
-    id: number;
+  currentUser?: {
+    id: string;
     email: string;
     name?: string;
+    roles?: string[];
+    createdAt?: string;
   } | null;
 }
 
+// ==========================================
+// 3. GET INITIAL STATE (Khởi tạo dữ liệu người dùng)
+// ==========================================
 export async function getInitialState(): Promise<InitialState> {
-  return {
-    user: null,
-  };
+  const token = localStorage.getItem('token');
+  
+  // Nếu hoàn toàn không có token, trả về rỗng ngay lập tức (Khách vãng lai)
+  if (!token) {
+    return { currentUser: null };
+  }
+
+  try {
+    const userRes: any = await getMe();
+    
+    // Bẫy lỗi: Kiểm tra nếu API chạy lỗi hoặc không trả về data thực tế
+    if (!userRes) {
+      localStorage.removeItem('token');
+      return { currentUser: null };
+    }
+
+    // Tự động bóc tách dữ liệu linh hoạt (Phòng trường hợp Backend bọc trong data hoặc profile)
+    const userData = userRes?.data || userRes?.account || userRes;
+    const profileData = userRes?.profile || userData;
+
+    if (!userData || (!userData.id && !userData._id)) {
+      localStorage.removeItem('token');
+      return { currentUser: null };
+    }
+
+    return {
+      currentUser: {
+        id: userData.id || userData._id,
+        email: userData.email,
+        name: profileData.full_name || userData.name || userData.username || 'User',
+        roles: userData.roles || ['USER'], // Nếu không có quyền, mặc định gán quyền USER
+        createdAt: userData.createdAt || userData.created_at,
+      },
+    };
+  } catch (error) {
+    // Nếu token hết hạn hoặc API sập, xóa luôn token lỗi và đưa về trạng thái chưa đăng nhập
+    localStorage.removeItem('token');
+    return { currentUser: null };
+  }
 }
 
-// =========================
-// ROUTE GUARD
-// =========================
+// ==========================================
+// 4. ROUTE GUARD (Chặn và điều hướng thông minh)
+// ==========================================
+export function onRouteChange({ location }: any) {
+  const pathname = location.pathname;
+  const token = localStorage.getItem('token');
+  
+  const isAdminPage = pathname.startsWith('/admin');
+  const isAuthPage = pathname.startsWith('/auth');
 
-export function onRouteChange({
-  location,
-}: any) {
-  const pathname =
-    location.pathname;
-
-  const token =
-    localStorage.getItem('token');
-
-  const isAuthPage =
-    pathname.startsWith('/auth');
-
-  const isAdminPage =
-    pathname.startsWith('/admin');
-
-  // Chưa đăng nhập
-  // Chỉ chặn trang admin
+  // Trường hợp 1: Chưa đăng nhập mà cố tình vào trang Admin quản trị -> Đá về Login
   if (!token && isAdminPage) {
     history.replace('/auth/login');
     return;
   }
 
-  // Đã đăng nhập
-  // Không cho quay lại login/register
+  // Trường hợp 2: Đã đăng nhập rồi mà cố tình quay lại trang Login/Register -> Đá vào Dashboard
   if (token && isAuthPage) {
-    history.replace(
-      '/admin/dashboard',
-    );
+    history.replace('/admin/dashboard');
+    return;
+  }
+
+  // Trường hợp 3: Khi vừa bật web (Đường dẫn gốc '/') mà có sẵn token Admin -> Đẩy thẳng vào Quản trị
+  if (token && pathname === '/') {
+    history.replace('/admin/dashboard');
   }
 }

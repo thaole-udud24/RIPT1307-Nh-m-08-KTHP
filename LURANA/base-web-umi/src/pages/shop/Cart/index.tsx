@@ -8,8 +8,11 @@ import EmptyCart from './components/EmptyCart';
 import { CartItem } from './types';
 import './index.less';
 
+const CART_KEY = 'lunaria_cart_items';
+
 const Cart: React.FC = () => {
   const [items, setItems] = useState<CartItem[]>([]);
+
   const [voucher, setVoucher] = useState('');
   const [discount, setDiscount] = useState(0);
 

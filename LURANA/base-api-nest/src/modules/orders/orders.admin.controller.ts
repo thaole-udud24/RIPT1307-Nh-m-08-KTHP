@@ -20,6 +20,7 @@ export class OrdersAdminController {
     return this.ordersService.getDashboardRevenue();
   }
 
+  // API Xuất báo cáo doanh thu (đã có sẵn)
   @Get('export/revenue-report')
   async exportRevenueReport(@Query() query: any, @Res() res: Response) {
     const reportData = await this.ordersService.getDashboardRevenue();
@@ -38,6 +39,16 @@ export class OrdersAdminController {
 
     res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
     res.setHeader('Content-Disposition', 'attachment; filename=revenue-report.xlsx');
+    res.send(buffer);
+  }
+
+  // API XUẤT DANH SÁCH ĐƠN HÀNG (BỔ SUNG MỚI)
+  @Get('export')
+  async exportOrders(@Query() query: any, @Res() res: Response) {
+    const buffer = await this.ordersService.exportOrdersAdmin(query);
+    
+    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    res.setHeader('Content-Disposition', 'attachment; filename="Danh_Sach_Don_Hang.xlsx"');
     res.send(buffer);
   }
 

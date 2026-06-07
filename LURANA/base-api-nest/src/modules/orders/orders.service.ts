@@ -10,6 +10,7 @@ import { CheckoutDto } from './dto/checkout.dto';
 import { VouchersService } from '../vouchers/vouchers.service';
 import { VoucherUsage, VoucherUsageDocument } from '../vouchers/schemas/voucher-usage.schema';
 import { PromotionsService } from '../promotions/promotions.service';
+import { ExcelBaseService } from 'src/shared/csv/excel.service';
 
 @Injectable()
 export class OrdersService {
@@ -21,6 +22,7 @@ export class OrdersService {
     private readonly productsService: ProductsService,
     private readonly vouchersService: VouchersService,
     private readonly promotionsService: PromotionsService,
+    private readonly excelService: ExcelBaseService,
   ) {}
 
   async checkout(userId: string, checkoutDto: CheckoutDto) {
@@ -28,8 +30,8 @@ export class OrdersService {
     session.startTransaction();
 
     try {
-      const cart = await this.cartModel.findOne({ 
-        userId: new Types.ObjectId(userId) 
+      const cart = await this.cartModel.findOne({
+        userId: new Types.ObjectId(userId),
       }).exec();
 
       if (!cart || cart.items.length === 0) {
@@ -37,8 +39,8 @@ export class OrdersService {
       }
 
       const orderItems: any[] = [];
-      let cartTotal = 0; 
-      let hasFlashSaleProduct = false; 
+      let cartTotal = 0;
+      let hasFlashSaleProduct = false;
 
       for (const item of cart.items) {
         await this.productsService.holdStock(item.productId.toString(), item.variantName, item.quantity, session);
@@ -48,12 +50,12 @@ export class OrdersService {
         if (!variant) throw new NotFoundException('Không tìm thấy biến thể tương ứng.');
 
         const currentPrice = await this.promotionsService.calculateActivePrice(
-          item.productId.toString(), 
-          variant.priceSell
+          item.productId.toString(),
+          variant.priceSell,
         );
-        
+
         if (currentPrice < variant.priceSell) {
-          hasFlashSaleProduct = true; 
+          hasFlashSaleProduct = true;
         }
 
         const subTotal = currentPrice * item.quantity;
@@ -66,22 +68,22 @@ export class OrdersService {
           quantity: item.quantity,
           priceSell: currentPrice,
           priceImport: variant.priceImport,
-          profit: (currentPrice - variant.priceImport) * item.quantity
+          profit: (currentPrice - variant.priceImport) * item.quantity,
         });
       }
 
       let discountAmount = 0;
       let appliedVoucherCode: string | null = null;
-      const shippingFee = 40000; 
+      const shippingFee = 40000;
 
       if (checkoutDto.voucherCode) {
         const productIds = cart.items.map(item => item.productId.toString());
-        
+
         const validationResult = await this.vouchersService.validateVoucher({
           voucherCode: checkoutDto.voucherCode,
-          cartTotal: cartTotal,
-          productIds: productIds,
-          hasDirectDiscount: hasFlashSaleProduct, 
+          cartTotal,
+          productIds,
+          hasDirectDiscount: hasFlashSaleProduct,
         });
 
         if (validationResult.valid) {
@@ -95,7 +97,7 @@ export class OrdersService {
 
       const orderCode = `LRN${Date.now()}`;
       const qrUrl = `https://img.vietqr.io/image/mbbank-0908112006-compact2.jpg?amount=${finalTotal}&addInfo=${orderCode}`;
-      
+
       const paymentTimeout = new Date();
       paymentTimeout.setMinutes(paymentTimeout.getMinutes() + 15);
 
@@ -103,11 +105,11 @@ export class OrdersService {
         orderCode,
         userId: new Types.ObjectId(userId),
         items: orderItems,
-        originalTotal: cartTotal,       
-        shippingFee: shippingFee,       
-        discountAmount: discountAmount, 
-        appliedVoucher: appliedVoucherCode, 
-        totalAmount: finalTotal,        
+        originalTotal: cartTotal,
+        shippingFee,
+        discountAmount,
+        appliedVoucher: appliedVoucherCode,
+        totalAmount: finalTotal,
         shippingAddress: checkoutDto.address,
         paymentMethod: checkoutDto.paymentMethod,
         note: checkoutDto.note,
@@ -116,18 +118,20 @@ export class OrdersService {
         qrUrl,
         paymentTimeout,
       });
-      
+
       const savedOrder = await order.save({ session });
 
       if (appliedVoucherCode) {
-        const voucherInfo = await this.vouchersService['voucherModel'].findOne({ voucherCode: appliedVoucherCode }).exec();
+        const voucherInfo = await this.vouchersService['voucherModel']
+          .findOne({ voucherCode: appliedVoucherCode })
+          .exec();
         if (voucherInfo) {
           const usage = new this.voucherUsageModel({
             voucherId: voucherInfo._id,
             voucherCode: appliedVoucherCode,
             userId: new Types.ObjectId(userId),
             orderId: savedOrder._id,
-            discountAmount: discountAmount
+            discountAmount,
           });
           await usage.save({ session });
         }
@@ -154,9 +158,9 @@ export class OrdersService {
     try {
       const order = await this.orderModel.findById(orderId).session(session).exec();
       if (!order) throw new NotFoundException('Không tìm thấy đơn hàng này trên hệ thống.');
-      
+
       if (order.status === OrderStatus.CANCELLED) {
-        throw new BadRequestException('Đơn hàng này đã bị hủy do quá hạn. Vui lòng kiểm tra sao kê để chuyển khoản trả lại tiền cho khách!');
+        throw new BadRequestException('Đơn hàng này đã bị hủy do quá hạn.');
       }
       if (order.paymentStatus === 'PAID') {
         throw new BadRequestException('Đơn hàng đã được xác nhận thanh toán tiền rồi.');
@@ -220,11 +224,14 @@ export class OrdersService {
     const expiredOrders = await this.orderModel.find({
       status: OrderStatus.PENDING,
       paymentStatus: 'UNPAID',
-      paymentTimeout: { $lt: now }
+      paymentTimeout: { $lt: now },
     }).exec();
 
     for (const order of expiredOrders) {
-      await this.cancelOrderAdmin(order._id.toString(), 'Hệ thống tự động hủy: Quá giới hạn 15 phút chờ quét mã QR thanh toán.');
+      await this.cancelOrderAdmin(
+        order._id.toString(),
+        'Hệ thống tự động hủy: Quá giới hạn 15 phút chờ quét mã QR thanh toán.',
+      );
     }
     return { cleanedCount: expiredOrders.length };
   }
@@ -241,7 +248,9 @@ export class OrdersService {
 
   async findOneByUser(id: string, userId: string) {
     if (!Types.ObjectId.isValid(id)) throw new BadRequestException('Mã đơn hàng không hợp lệ.');
-    const order = await this.orderModel.findOne({ _id: id, userId: new Types.ObjectId(userId) }).exec();
+    const order = await this.orderModel
+      .findOne({ _id: id, userId: new Types.ObjectId(userId) })
+      .exec();
     if (!order) throw new NotFoundException('Không tìm thấy đơn hàng');
     return order;
   }
@@ -254,7 +263,7 @@ export class OrdersService {
       filters.$or = [
         { orderCode: new RegExp(search, 'i') },
         { 'shippingAddress.phone': new RegExp(search, 'i') },
-        { 'shippingAddress.customerName': new RegExp(search, 'i') }
+        { 'shippingAddress.customerName': new RegExp(search, 'i') },
       ];
     }
     const skip = (page - 1) * limit;
@@ -265,6 +274,17 @@ export class OrdersService {
     return { data, total, page, limit };
   }
 
+  // ✅ THÊM MỚI
+  async findOneAdmin(id: string) {
+    if (!Types.ObjectId.isValid(id)) throw new BadRequestException('Mã đơn hàng không hợp lệ.');
+    const order = await this.orderModel
+      .findById(id)
+      .populate('userId', 'email fullName')
+      .exec();
+    if (!order) throw new NotFoundException('Không tìm thấy đơn hàng.');
+    return order;
+  }
+
   async updateStatus(id: string, status: OrderStatus) {
     if (!Types.ObjectId.isValid(id)) throw new BadRequestException('Mã đơn hàng không hợp lệ.');
     const order = await this.orderModel.findByIdAndUpdate(id, { status }, { new: true }).exec();
@@ -272,15 +292,51 @@ export class OrdersService {
     return order;
   }
 
-  // ==========================================
-  // DASHBOARD & REPORTING AGGREGATION
-  // ==========================================
+  async exportOrdersAdmin(query: any) {
+    const { status, search, exportOptions } = query;
+    const filters: any = {};
+
+    if (status) filters.status = status;
+    if (search) {
+      filters.$or = [
+        { orderCode: new RegExp(search, 'i') },
+        { 'shippingAddress.phone': new RegExp(search, 'i') },
+        { 'shippingAddress.customerName': new RegExp(search, 'i') },
+      ];
+    }
+
+    const orders = await this.orderModel.find(filters).sort({ createdAt: -1 }).exec();
+
+    const allFieldsMap: Record<string, (item: any) => any> = {
+      orderCode: (item) => item.orderCode || 'N/A',
+      customer: (item) => `${item.shippingAddress?.customerName || 'N/A'} - ${item.shippingAddress?.phone || 'N/A'}`,
+      totalAmount: (item) => item.totalAmount || 0,
+      status: (item) => item.status || 'N/A',
+    };
+
+    let fieldsToExport = Object.keys(allFieldsMap);
+    if (exportOptions) {
+      fieldsToExport = Array.isArray(exportOptions) ? exportOptions : exportOptions.split(',');
+    }
+
+    const validFieldsToExport = fieldsToExport.filter(field => allFieldsMap[field]);
+
+    const excelData = orders.map((item) => {
+      const row: any = {};
+      validFieldsToExport.forEach(field => {
+        row[field] = allFieldsMap[field](item);
+      });
+      return row;
+    });
+
+    return this.excelService.exportData(excelData, validFieldsToExport);
+  }
+
   async getDashboardRevenue() {
     const startOfMonth = new Date();
     startOfMonth.setDate(1);
     startOfMonth.setHours(0, 0, 0, 0);
 
-    // 1. Lấy chỉ số tổng quan (KPIs)
     const [kpiResult] = await this.orderModel.aggregate([
       { $match: { paymentStatus: 'PAID', createdAt: { $gte: startOfMonth } } },
       {
@@ -290,93 +346,63 @@ export class OrdersService {
           grossRevenue: { $sum: '$originalTotal' },
           netRevenue: { $sum: { $subtract: ['$totalAmount', '$shippingFee'] } },
           totalDiscount: { $sum: '$discountAmount' },
-          totalItemsProfit: { $sum: { $sum: '$items.profit' } }
-        }
-      }
+          totalItemsProfit: { $sum: { $sum: '$items.profit' } },
+        },
+      },
     ]);
 
-    const kpis = kpiResult ? {
-      totalRevenue: { value: kpiResult.netRevenue },
-      netProfit: { value: kpiResult.totalItemsProfit - kpiResult.totalDiscount, trend: 12 }, 
-      discounts: { value: kpiResult.totalDiscount },
-      aov: { value: kpiResult.totalOrders > 0 ? Math.floor(kpiResult.netRevenue / kpiResult.totalOrders) : 0 }
-    } : {
-      totalRevenue: { value: 0 }, netProfit: { value: 0, trend: 0 }, discounts: { value: 0 }, aov: { value: 0 }
-    };
+    const kpis = kpiResult
+      ? {
+          totalRevenue: { value: kpiResult.netRevenue },
+          netProfit: { value: kpiResult.totalItemsProfit - kpiResult.totalDiscount, trend: 12 },
+          discounts: { value: kpiResult.totalDiscount },
+          aov: { value: kpiResult.totalOrders > 0 ? Math.floor(kpiResult.netRevenue / kpiResult.totalOrders) : 0 },
+        }
+      : {
+          totalRevenue: { value: 0 },
+          netProfit: { value: 0, trend: 0 },
+          discounts: { value: 0 },
+          aov: { value: 0 },
+        };
 
-    // 2. Phân tích loại sản phẩm (Category Donut)
     const categoryData = await this.orderModel.aggregate([
       { $match: { paymentStatus: 'PAID', createdAt: { $gte: startOfMonth } } },
       { $unwind: '$items' },
-      {
-        $lookup: {
-          from: 'products', 
-          localField: 'items.productId',
-          foreignField: '_id',
-          as: 'productInfo'
-        }
-      },
+      { $lookup: { from: 'products', localField: 'items.productId', foreignField: '_id', as: 'productInfo' } },
       { $unwind: '$productInfo' },
-      {
-        $lookup: {
-          from: 'categories', 
-          localField: 'productInfo.category',
-          foreignField: '_id',
-          as: 'categoryInfo'
-        }
-      },
+      { $lookup: { from: 'categories', localField: 'productInfo.category', foreignField: '_id', as: 'categoryInfo' } },
       { $unwind: '$categoryInfo' },
-      {
-        $group: {
-          _id: '$categoryInfo.name', 
-          value: { $sum: { $multiply: ['$items.priceSell', '$items.quantity'] } }
-        }
-      },
-      { $sort: { value: -1 } }
+      { $group: { _id: '$categoryInfo.name', value: { $sum: { $multiply: ['$items.priceSell', '$items.quantity'] } } } },
+      { $sort: { value: -1 } },
     ]);
 
     const colors = ['#FFA78A', '#A7C7E7', '#E6E6FA', '#FFD1DC', '#B4E6B0'];
     const formattedCategory = categoryData.map((cat, index) => ({
       name: cat._id,
       value: cat.value,
-      color: colors[index % colors.length]
+      color: colors[index % colors.length],
     }));
 
-    // 3. Top Sản phẩm
     const topProducts = await this.orderModel.aggregate([
       { $match: { paymentStatus: 'PAID', createdAt: { $gte: startOfMonth } } },
       { $unwind: '$items' },
-      {
-        $lookup: {
-          from: 'products',
-          localField: 'items.productId',
-          foreignField: '_id',
-          as: 'productInfo'
-        }
-      },
+      { $lookup: { from: 'products', localField: 'items.productId', foreignField: '_id', as: 'productInfo' } },
       { $unwind: '$productInfo' },
-      {
-        $lookup: {
-          from: 'categories',
-          localField: 'productInfo.category',
-          foreignField: '_id',
-          as: 'categoryInfo'
-        }
-      },
+      { $lookup: { from: 'categories', localField: 'productInfo.category', foreignField: '_id', as: 'categoryInfo' } },
       { $unwind: '$categoryInfo' },
       {
         $group: {
           _id: '$items.productId',
           name: { $first: '$items.name' },
           sku: { $first: '$productInfo.sku' },
-          categoryName: { $first: '$categoryInfo.name' }, 
+          categoryName: { $first: '$categoryInfo.name' },
           sales: { $sum: '$items.quantity' },
           revenue: { $sum: { $multiply: ['$items.priceSell', '$items.quantity'] } },
-          profit: { $sum: '$items.profit' }
-        }
+          profit: { $sum: '$items.profit' },
+        },
       },
       { $sort: { profit: -1 } },
-      { $limit: 10 }
+      { $limit: 10 },
     ]);
 
     return {
@@ -385,12 +411,12 @@ export class OrdersService {
         kpis,
         categoryData: formattedCategory,
         topProducts: topProducts.map(p => ({ ...p, id: p._id.toString() })),
-        topVouchers: [], 
+        topVouchers: [],
         trendData: [
           { label: 'Tuần 1', revenue: 15000000, profit: 5000000 },
           { label: 'Tuần 2', revenue: 22000000, profit: 8000000 },
-        ]
-      }
+        ],
+      },
     };
   }
 }

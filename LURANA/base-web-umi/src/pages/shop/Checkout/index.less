@@ -397,8 +397,15 @@
       h1 {
         font-size: 34px;
         font-weight: 700;
-        color: #222222;
+        background: linear-gradient(120deg, #e63946, #ff9a7a, #ff4d4f, #e63946);
+        background-size: 200% auto;
+        -webkit-background-clip: text;
+        background-clip: text;
+        -webkit-text-fill-color: transparent;
+        color: transparent;
+        animation: logo-gradient 4s linear infinite;
         margin: 0 0 12px;
+        display: inline-block;
       }
 
       p {

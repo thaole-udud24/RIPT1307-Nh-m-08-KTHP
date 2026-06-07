@@ -1,20 +1,37 @@
-import request from 'umi-request';
+import request from '@/services/base/request';
 
-export async function login(data: {
-  email: string;
-  password: string;
-}) {
+// ==============================
+// AUTHENTICATION
+// ==============================
+
+export async function login(data: { email: string; password: string }) {
   return request('/api/auth/login', {
     method: 'POST',
     data,
   });
 }
 
-// REGESTER 
+export async function logout() {
+  return request('/api/auth/logout', {
+    method: 'POST',
+  });
+}
+
+export async function me() {
+  return request('/api/users/me', {
+    method: 'GET',
+  });
+}
+
+// ==============================
+// REGISTRATION
+// ==============================
+
 export async function register(data: {
   name: string;
   email: string;
   password: string;
+  confirmPassword: string;  // ← thêm field này
 }) {
   return request('/api/auth/register', {
     method: 'POST',
@@ -22,7 +39,9 @@ export async function register(data: {
   });
 }
 
-// forgot password 
+// ==============================
+// FORGOT & RESET PASSWORD
+// ==============================
 
 export async function forgotPassword(data: { email: string }) {
   return request('/api/auth/forgot-password', {
@@ -45,10 +64,11 @@ export async function resendCode(data: { email: string }) {
   });
 }
 
-// reset password
 export async function resetPassword(data: {
   email: string;
-  password: string;
+  code: string;
+  newPassword: string;
+  confirmNewPassword: string;
 }) {
   return request('/api/auth/reset-password', {
     method: 'POST',

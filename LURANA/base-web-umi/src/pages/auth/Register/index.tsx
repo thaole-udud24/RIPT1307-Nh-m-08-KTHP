@@ -8,40 +8,45 @@ export default function RegisterPage() {
     name: '',
     email: '',
     password: '',
+    confirmPassword: '',
   });
 
   const [loading, setLoading] = useState(false);
 
   const handleChange = (e: any) => {
-    setForm({
-      ...form,
-      [e.target.name]: e.target.value,
-    });
+    setForm({ ...form, [e.target.name]: e.target.value });
   };
 
   const handleRegister = async () => {
-    const { name, email, password } = form;
+    const { name, email, password, confirmPassword } = form;
 
-    if (!name || !email || !password) {
+    if (!name || !email || !password || !confirmPassword) {
       return message.error('Vui lòng nhập đầy đủ thông tin');
     }
 
-    setLoading(true);
-
-    try {
-      const res = await registerApi({ name, email, password });
-
-      if (!res.success) {
-        return message.error(res.message);
-      }
-
-      message.success(res.message);
-      history.push('/auth/login');
-    } catch (error) {
-      message.error('Lỗi hệ thống');
+    if (password !== confirmPassword) {
+      return message.error('Mật khẩu xác nhận không khớp');
     }
 
-    setLoading(false);
+    setLoading(true);
+    message.destroy();
+
+    try {
+      const res: any = await registerApi({ name, email, password, confirmPassword });
+      const data = res?.data || res;
+
+      message.success(data?.message || 'Đăng ký thành công! Vui lòng đăng nhập.');
+      history.push('/auth/login');
+
+    } catch (error: any) {
+      const errMsg =
+        error?.response?.data?.message ||
+        error?.message ||
+        'Lỗi hệ thống, vui lòng thử lại!';
+      message.error(typeof errMsg === 'string' ? errMsg : JSON.stringify(errMsg));
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -64,19 +69,17 @@ export default function RegisterPage() {
         <div className="auth-right">
           <div className="auth-form">
 
-            <button
-              className="auth-back"
-              onClick={() => history.push('/home')}
-            >
+            <button className="auth-back" onClick={() => history.push('/home')}>
               ← Trở lại
             </button>
 
             <h2>TẠO TÀI KHOẢN CỦA BẠN</h2>
-            <p className="auth-desc">
-              Tạo tài khoản mua sắm của bạn
-            </p>
+            <p className="auth-desc">Tạo tài khoản mua sắm của bạn</p>
 
-            <button className="auth-google" onClick={() => message.info('Tính năng đăng ký bằng Google đang được bảo trì...')}>
+            <button
+              className="auth-google"
+              onClick={() => message.info('Tính năng đăng ký bằng Google đang được bảo trì...')}
+            >
               🔵 Sign up with Google
             </button>
 
@@ -87,6 +90,7 @@ export default function RegisterPage() {
               placeholder="Họ và tên"
               value={form.name}
               onChange={handleChange}
+              disabled={loading}
             />
 
             <input
@@ -94,6 +98,7 @@ export default function RegisterPage() {
               placeholder="Email"
               value={form.email}
               onChange={handleChange}
+              disabled={loading}
             />
 
             <input
@@ -102,7 +107,17 @@ export default function RegisterPage() {
               placeholder="Mật khẩu"
               value={form.password}
               onChange={handleChange}
+              disabled={loading}
+            />
+
+            <input
+              name="confirmPassword"
+              type="password"
+              placeholder="Xác nhận mật khẩu"
+              value={form.confirmPassword}
+              onChange={handleChange}
               onKeyDown={(e) => e.key === 'Enter' && handleRegister()}
+              disabled={loading}
             />
 
             <button
@@ -115,9 +130,7 @@ export default function RegisterPage() {
 
             <p className="auth-register">
               Bạn đã có tài khoản?{' '}
-              <span onClick={() => history.push('/auth/login')}>
-                Đăng nhập
-              </span>
+              <span onClick={() => history.push('/auth/login')}>Đăng nhập</span>
             </p>
 
           </div>

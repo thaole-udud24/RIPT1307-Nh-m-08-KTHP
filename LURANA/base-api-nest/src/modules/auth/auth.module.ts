@@ -11,7 +11,7 @@ import {
   EmailVerifyToken,
   EmailVerifyTokenSchema,
 } from './schemas/email-verify-token.schema';
-import {
+import { 
   PasswordResetToken,
   PasswordResetTokenSchema,
 } from './schemas/password-reset-token.schema';

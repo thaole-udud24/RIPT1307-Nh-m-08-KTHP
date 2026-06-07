@@ -21,6 +21,7 @@ import {
 import logo from '@/assets/images/logo-lunaria.png';
 import './AdminLayout.less';
 
+// ... (Giữ nguyên masterMenus và mainMenus của bạn) ...
 const masterMenus = [
   {
     title: 'Sản phẩm',
@@ -48,15 +49,53 @@ export default function AdminLayout(props: any) {
   const location = useLocation();
   const [collapsed, setCollapsed] = useState(false);
   const [openProductMenu, setOpenProductMenu] = useState(true);
+  const [isMobile, setIsMobile] = useState(false);
+
+  // Xử lý Responsive
+  useEffect(() => {
+    const handleResize = () => {
+      if (window.innerWidth <= 768) {
+        setIsMobile(true);
+        setCollapsed(true); // Mặc định đóng trên mobile
+      } else {
+        setIsMobile(false);
+      }
+    };
+    
+    window.addEventListener('resize', handleResize);
+    handleResize(); // Chạy lần đầu khi mount
+    
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   useEffect(() => {
     if (location.pathname === '/' || location.pathname === '/admin') {
       history.push('/admin/dashboard');
     }
-  }, [location.pathname]);
+    // Tự động đóng menu trên mobile khi chuyển trang
+    if (isMobile) {
+      setCollapsed(true);
+    }
+  }, [location.pathname, isMobile]);
+
+  // Xử lý Đăng xuất
+// 1. Cập nhật lại hàm handleLogout
+    const handleLogout = () => {
+      // Xoá token/thông tin user ở localStorage (nếu có)
+      localStorage.removeItem('token'); 
+      localStorage.removeItem('user');
+      
+      // Chuyển hướng chính xác về route /auth/login
+      history.replace('/auth/login'); 
+    };
 
   return (
     <div className="admin-layout">
+      {/* Overlay cho Mobile khi mở menu */}
+      {isMobile && !collapsed && (
+        <div className="mobile-overlay" onClick={() => setCollapsed(true)}></div>
+      )}
+
       <div className={`admin-sidebar ${collapsed ? 'collapsed' : ''}`}>
         <div className="admin-sidebar-logo">
           <img src={logo} alt="Lunaria" />
@@ -88,7 +127,7 @@ export default function AdminLayout(props: any) {
                     <div
                       className={`admin-sidebar-item parent-menu ${isParentActive ? 'active-parent' : ''}`}
                       onClick={() => {
-                        if (collapsed) setCollapsed(false);
+                        if (collapsed && !isMobile) setCollapsed(false);
                         setOpenProductMenu(!openProductMenu);
                       }}
                     >
@@ -100,7 +139,7 @@ export default function AdminLayout(props: any) {
                         {openProductMenu ? <UpOutlined /> : <DownOutlined />}
                       </div>
                     </div>
-                    <div className={`submenu-wrapper ${openProductMenu && !collapsed ? 'open' : ''}`}>
+                    <div className={`submenu-wrapper ${openProductMenu && (!collapsed || isMobile) ? 'open' : ''}`}>
                       {item.children.map((child) => (
                         <div
                           key={child.path}
@@ -129,7 +168,8 @@ export default function AdminLayout(props: any) {
           </div>
         </div>
 
-        <div className="admin-sidebar-logout">
+        {/* Cập nhật nút Đăng Xuất */}
+        <div className="admin-sidebar-logout" onClick={handleLogout}>
           <div className="item-icon"><LogoutOutlined /></div>
           <span className="item-text">Đăng xuất</span>
         </div>
@@ -163,6 +203,15 @@ export default function AdminLayout(props: any) {
               <div className="icon-btn">
                 <BellOutlined />
                 <span className="badge red">9+</span>
+              </div>
+              
+              {/* Thêm phần Avatar tại đây */}
+              <div className="user-profile">
+                <img 
+                  src="https://ui-avatars.com/api/?name=Admin&background=FFA78A&color=fff&bold=true" 
+                  alt="Admin Avatar" 
+                  className="avatar-img" 
+                />
               </div>
             </div>
           </div>

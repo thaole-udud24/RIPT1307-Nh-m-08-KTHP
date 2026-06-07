@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { history } from 'umi';
 import { message } from 'antd';
 import { forgotPassword } from '@/services/TaiKhoan/auth.api';
+import { ArrowLeftOutlined, StarFilled } from '@ant-design/icons';
 
 export default function ForgotPasswordPage() {
   const [email, setEmail] = useState('');
@@ -39,60 +40,80 @@ export default function ForgotPasswordPage() {
   };
 
   return (
-    <div className="auth-page">
+    <div className="auth-page forgot-password">
       <div className="auth-container">
-
-        {/* LEFT */}
+        {/* LEFT PANEL */}
         <div className="auth-left">
+          <div className="auth-shapes">
+            <div className="shape shape-1"></div>
+            <div className="shape shape-2"></div>
+            <div className="shape shape-3"></div>
+          </div>
           <div className="auth-overlay">
-            <h1>LUNARIA</h1>
+            <h1 className="logo-animated-text">LUNARIA</h1>
             <p>
-              Chúng tôi sẽ giúp bạn lấy lại quyền truy cập nhanh chóng.
+              Chúng tôi sẽ giúp bạn lấy lại quyền truy cập nhanh chóng và an toàn nhất.
             </p>
-            <button>Mua ngay</button>
+            <div className="auth-features">
+              <div className="feature-item">
+                <StarFilled className="feature-icon" />
+                <span>100% Nguyên liệu hữu cơ lành tính</span>
+              </div>
+              <div className="feature-item">
+                <StarFilled className="feature-icon" />
+                <span>Công thức sinh học tiên tiến độc quyền</span>
+              </div>
+              <div className="feature-item">
+                <StarFilled className="feature-icon" />
+                <span>Nuôi dưỡng làn da căng mọng tự nhiên</span>
+              </div>
+            </div>
+            <button className="auth-explore-btn" onClick={() => history.push('/products')}>Mua ngay</button>
           </div>
         </div>
 
-        {/* RIGHT */}
+        {/* RIGHT PANEL */}
         <div className="auth-right">
           <div className="auth-form">
-
-            <button
-              className="auth-back"
-              onClick={() => history.push('/auth/login')}
-            >
-              ← Trở lại
-            </button>
+            <div className="auth-top">
+              <button
+                className="auth-back"
+                onClick={() => history.push('/auth/login')}
+              >
+                <ArrowLeftOutlined /> Quay lại đăng nhập
+              </button>
+            </div>
 
             <h2>Quên mật khẩu</h2>
             <p className="auth-desc">
-              Nhập email để nhận link đặt lại mật khẩu
+              Nhập địa chỉ Email của bạn để nhận mã xác minh đặt lại mật khẩu
             </p>
 
-            <input
-              placeholder="Email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-            />
+            <div className="input-group">
+              <input
+                type="email"
+                placeholder="Địa chỉ Email của bạn"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+              />
+            </div>
 
             <button
               className="auth-loginBtn"
               onClick={handleSubmit}
               disabled={loading}
             >
-              {loading ? 'Đang gửi...' : 'Gửi yêu cầu'}
+              {loading ? 'Đang gửi...' : 'Gửi mã xác minh'}
             </button>
 
             <p className="auth-register">
-              Quay lại?{' '}
+              Nhớ mật khẩu?{' '}
               <span onClick={() => history.push('/auth/login')}>
-                Đăng nhập
+                Đăng nhập ngay
               </span>
             </p>
-
           </div>
         </div>
-
       </div>
     </div>
   );

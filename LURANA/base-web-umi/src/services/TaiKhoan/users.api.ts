@@ -1,0 +1,171 @@
+import request from '@/services/base/request';
+
+// =========================================================
+// API DÀNH CHO KHÁCH HÀNG (END-USER)
+// =========================================================
+
+/**
+ * Lấy thông tin tài khoản và hồ sơ cá nhân hiện tại
+ */
+export async function getMe() {
+  return request('/api/users/me', { 
+    method: 'GET' 
+  });
+}
+
+/**
+ * Cập nhật thông tin cơ bản của hồ sơ (Họ tên, giới tính, ảnh đại diện)
+ */
+export async function updateProfile(data: { full_name?: string; gender?: string; avatar_url?: string }) {
+  return request('/api/users/me', { 
+    method: 'PUT', 
+    data 
+  });
+}
+
+// ─── QUẢN LÝ SỐ ĐIỆN THOẠI KHÁCH HÀNG ───────────────────────────────────
+
+/**
+ * Thêm số điện thoại mới vào danh sách
+ */
+export async function addPhone(data: {
+  region_code: string;
+  country_calling_code: string;
+  national_number: string;
+  phone_type?: string;
+  is_default?: boolean;
+}) {
+  return request('/api/users/phones', {
+    method: 'POST',
+    data,
+  });
+}
+
+/**
+ * Cập nhật thông tin số điện thoại cụ thể
+ */
+export async function updatePhone(
+  phoneId: string,
+  data: {
+    region_code?: string;
+    country_calling_code?: string;
+    national_number?: string;
+    phone_type?: string;
+    is_default?: boolean;
+  },
+) {
+  return request(`/api/users/phones/${phoneId}`, {
+    method: 'PATCH',
+    data,
+  });
+}
+
+/**
+ * Đặt một số điện thoại làm mặc định cho tài khoản
+ */
+export async function setDefaultPhone(phoneId: string) {
+  return request(`/api/users/phones/${phoneId}/default`, {
+    method: 'PATCH',
+  });
+}
+
+/**
+ * Xóa số điện thoại khỏi danh sách
+ */
+export async function removePhone(phoneId: string) {
+  return request(`/api/users/phones/${phoneId}`, {
+    method: 'DELETE',
+  });
+}
+
+// ─── QUẢN LÝ SỔ ĐỊA CHỈ KHÁCH HÀNG ──────────────────────────────────────
+
+/**
+ * Thêm một địa chỉ nhận hàng mới
+ */
+export async function addAddress(data: {
+  label?: string;
+  address_line?: string;
+  province?: string;
+  district?: string;
+  ward?: string;
+  is_default?: boolean;
+}) {
+  return request('/api/users/addresses', {
+    method: 'POST',
+    data,
+  });
+}
+
+/**
+ * Cập nhật thông tin địa chỉ nhận hàng
+ */
+export async function updateAddress(
+  addressId: string,
+  data: {
+    label?: string;
+    address_line?: string;
+    province?: string;
+    district?: string;
+    ward?: string;
+    is_default?: boolean;
+  },
+) {
+  return request(`/api/users/addresses/${addressId}`, {
+    method: 'PATCH',
+    data,
+  });
+}
+
+/**
+ * Đặt một địa chỉ làm địa chỉ giao hàng mặc định
+ */
+export async function setDefaultAddress(addressId: string) {
+  return request(`/api/users/addresses/${addressId}/default`, {
+    method: 'PATCH',
+  });
+}
+
+/**
+ * Xóa một địa chỉ nhận hàng (Xóa mềm ở phía Backend)
+ */
+export async function removeAddress(addressId: string) {
+  return request(`/api/users/addresses/${addressId}`, {
+    method: 'DELETE',
+  });
+}
+
+
+// =========================================================
+// API DÀNH CHO ADMIN QUẢN LÝ KHÁCH HÀNG
+// =========================================================
+
+/**
+ * 1. Lấy danh sách khách hàng (Có phân trang, bộ lọc tìm kiếm)
+ */
+export async function getAdminUsers(params: { page: number; limit: number; search?: string }) {
+  return request('/api/admin/users', {
+    method: 'GET',
+    params,
+  });
+}
+
+/**
+ * 2. Lấy hồ sơ chi tiết Khách hàng 360° (Gồm Profile, Địa chỉ, Thống kê & 5 Đơn hàng gần nhất)
+ */
+export async function getAdminUserDetail(userId: string) {
+  return request(`/api/admin/users/${userId}`, {
+    method: 'GET',
+  });
+}
+
+/**
+ * 3. Xuất file Excel danh sách khách hàng từ hệ thống
+ */
+export async function exportUsersAdmin(params?: { search?: string; exportOptions?: string }) {
+  return request('/api/admin/users/export', {
+    method: 'GET',
+    params,
+    responseType: 'blob', // Định dạng bắt buộc để xử lý tải xuống file nhị phân (Excel)
+  });
+}

@@ -1,0 +1,174 @@
+@primary-color: #FFA78A;
+@card-bg: #FFF8F6;
+@text-dark: #333333;
+
+.shop-all-products {
+  width: 100%;
+
+  /* ==================================
+     CSS GRID: ĐỊNH HÌNH 4 CỘT CHUẨN XÁC
+     ================================== */
+  .custom-product-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr); /* Bắt buộc chia đều 4 cột */
+    gap: 24px; /* Khoảng cách giữa các ô */
+    width: 100%;
+    margin-bottom: 32px;
+  }
+
+  /* Responsive nếu thu nhỏ màn hình (Tablet, Mobile) */
+  @media (max-width: 1200px) {
+    .custom-product-grid { grid-template-columns: repeat(3, 1fr); }
+  }
+  @media (max-width: 992px) {
+    .custom-product-grid { grid-template-columns: repeat(2, 1fr); }
+  }
+  @media (max-width: 576px) {
+    .custom-product-grid { grid-template-columns: 1fr; }
+  }
+
+  /* ==================================
+     STYLE CHO TỪNG THẺ SẢN PHẨM
+     ================================== */
+  .shop2-product-card {
+    background-color: @card-bg;
+    border-radius: 16px;
+    padding: 20px;
+    height: 380px; /* Cố định chiều cao tất cả thẻ */
+    display: flex;
+    flex-direction: column;
+    transition: all 0.3s ease;
+    border: 1px solid transparent;
+    cursor: pointer;
+
+    /* Hiệu ứng khi di chuột vào thẻ */
+    &:hover:not(.empty-card) {
+      transform: translateY(-5px);
+      box-shadow: 0 10px 20px rgba(255, 167, 138, 0.15);
+      border-color: rgba(255, 167, 138, 0.3);
+
+      .card-img-container img {
+        transform: scale(1.05);
+      }
+    }
+
+    /* Top Bar: Nút thả tim & Điểm đánh giá */
+    .card-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 10px;
+
+      .heart-icon {
+        font-size: 20px;
+        color: #ffb6a3;
+        transition: transform 0.2s;
+
+        &:hover { transform: scale(1.1); }
+        .active-heart { color: #ff7875; }
+      }
+
+      .rating-badge {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        font-size: 14px;
+        font-weight: 600;
+        color: @text-dark;
+
+        .anticon-star { color: #FFC107; }
+      }
+    }
+
+    /* Container chứa Ảnh */
+    .card-img-container {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 16px;
+      overflow: hidden;
+
+      img {
+        max-width: 80%;
+        max-height: 180px;
+        object-fit: contain;
+        transition: transform 0.4s ease;
+      }
+    }
+
+    /* Container chứa Tên và Giá */
+    .card-info {
+      text-align: center;
+      margin-top: auto;
+
+      .prod-name {
+        font-size: 14px;
+        font-weight: 500;
+        color: @text-dark;
+        margin: 0 0 12px 0;
+        display: -webkit-box;
+        -webkit-line-clamp: 2; /* Tự động thêm dấu ... nếu dài quá 2 dòng */
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        height: 42px; /* Cố định không bị xê dịch giá */
+      }
+
+      .prod-price {
+        font-size: 15px;
+        font-weight: 600;
+        color: @text-dark;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+      }
+    }
+
+    /* ==================================
+       STYLE CHO CÁC Ô TRỐNG BÙ VÀO
+       ================================== */
+    &.empty-card {
+      background-color: transparent;
+      border: 1px dashed rgba(255, 167, 138, 0.4);
+      box-shadow: none;
+      cursor: default;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      opacity: 0.6;
+      
+      .empty-content {
+        width: 60px;
+        height: 60px;
+        border-radius: 50%;
+        background-color: rgba(255, 167, 138, 0.1);
+      }
+    }
+  }
+
+  /* ==================================
+     STYLE CHO KHU VỰC PHÂN TRANG
+     ================================== */
+  .custom-pagination {
+    margin-top: 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 15px 0;
+    border-top: 1px solid #f0f0f0;
+
+    .total-text {
+      color: #888;
+      font-size: 14px;
+    }
+
+    .per-page-select {
+      width: 100px;
+      .ant-select-selector {
+        padding: 0;
+        color: @text-dark;
+      }
+    }
+  }
+}
