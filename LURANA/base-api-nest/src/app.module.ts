@@ -7,9 +7,10 @@ import { MailModule } from './shared/mail/mail.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { UsersModule } from './modules/users/users.module';
 import { CatalogModule } from './modules/catalog/catalog.module';
-import { CartModule } from './modules/cart/cart.module';
-import { OrdersModule } from './modules/orders/orders.module';
+import { CartModule } from './modules/cart/cart.module'; 
+import { OrdersModule } from './modules/orders/orders.module'; 
 import { VouchersModule } from './modules/vouchers/vouchers.module';
+import { PromotionsModule } from './modules/promotions/promotions.module';
 
 @Module({
   imports: [
@@ -21,12 +22,12 @@ import { VouchersModule } from './modules/vouchers/vouchers.module';
     MongooseDatabaseModule,
     MailModule,
     AuthModule,
-
     UsersModule,
-    CatalogModule,
-    CartModule,
-    OrdersModule,
+    CatalogModule, 
+    CartModule,   
+    OrdersModule,  
     VouchersModule,
+    PromotionsModule,
   ],
 })
 export class AppModule {}

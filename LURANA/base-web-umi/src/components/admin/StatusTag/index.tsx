@@ -1,29 +1,59 @@
-import { Switch, Tag } from 'antd';
+import {
+  Switch,
+  Tag,
+} from 'antd';
+
+import {
+  STATUS,
+} from '@/constants/enums';
+
+// =========================
+// TYPES
+// =========================
 
 export type StatusType =
-  | 'ACTIVE'
-  | 'INACTIVE'
+  | STATUS.ACTIVE
+  | STATUS.INACTIVE
   | 'OUT_OF_STOCK'
-  | 'DRAFT';
+  | 'DRAFT'
+  | 'upcoming'
+  | 'active'
+  | 'expired'
+  | 'ended';
 
 interface StatusTagProps {
-  status: StatusType;
+  status:
+    | StatusType
+    | boolean;
 
   editable?: boolean;
 
   onChange?: (
     checked: boolean,
   ) => void;
+
+  activeText?: string;
+
+  inactiveText?: string;
 }
 
+// =========================
+// CONFIG
+// =========================
+
 const STATUS_CONFIG = {
-  ACTIVE: {
-    label: 'Đang bán',
+
+  // =========================
+  // COMMON
+  // =========================
+
+  [STATUS.ACTIVE]: {
+    label: 'Hoạt động',
     color: 'success',
   },
 
-  INACTIVE: {
-    label: 'Ngừng bán',
+  [STATUS.INACTIVE]: {
+    label: 'Ẩn',
     color: 'default',
   },
 
@@ -36,21 +66,78 @@ const STATUS_CONFIG = {
     label: 'Bản nháp',
     color: 'warning',
   },
+
+  // =========================
+  // PROMOTIONS
+  // =========================
+
+  active: {
+    label: 'Đang diễn ra',
+    color: 'success',
+  },
+
+  upcoming: {
+    label: 'Sắp diễn ra',
+    color: 'processing',
+  },
+
+  ended: {
+    label: 'Đã kết thúc',
+    color: 'default',
+  },
+
+  expired: {
+    label: 'Đã hết hạn',
+    color: 'error',
+  },
 };
 
+// =========================
+// COMPONENT
+// =========================
+
 export default function StatusTag({
+
   status,
+
   editable = false,
+
   onChange,
+
+  activeText = 'Hoạt động',
+
+  inactiveText = 'Ẩn',
+
 }: StatusTagProps) {
+
+  // =========================
+  // BOOLEAN SUPPORT
+  // =========================
+
+  const normalizedStatus =
+    status === true
+      ? STATUS.ACTIVE
+      : status === false
+      ? STATUS.INACTIVE
+      : status;
+
   // =========================
   // EDITABLE MODE
   // =========================
 
-  if (editable) {
+  if (
+    editable &&
+    (
+      normalizedStatus === STATUS.ACTIVE ||
+      normalizedStatus === STATUS.INACTIVE
+    )
+  ) {
     return (
       <Switch
-        checked={status === 'ACTIVE'}
+        checked={
+          normalizedStatus ===
+          STATUS.ACTIVE
+        }
         className="admin-status-switch"
         onChange={onChange}
       />
@@ -62,11 +149,23 @@ export default function StatusTag({
   // =========================
 
   const currentStatus =
-    STATUS_CONFIG[status];
+    STATUS_CONFIG[
+      normalizedStatus
+    ];
+
+  if (!currentStatus) {
+    return <Tag>{status}</Tag>;
+  }
 
   return (
     <Tag color={currentStatus.color}>
-      {currentStatus.label}
+      {normalizedStatus ===
+      STATUS.ACTIVE
+        ? activeText
+        : normalizedStatus ===
+          STATUS.INACTIVE
+        ? inactiveText
+        : currentStatus.label}
     </Tag>
   );
 }

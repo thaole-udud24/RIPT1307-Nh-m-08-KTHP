@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   ShoppingCartOutlined, 
   UserOutlined, 
@@ -9,7 +9,11 @@ import {
   FacebookFilled,
   TwitterCircleFilled,
   InstagramFilled,
-  SearchOutlined
+  SearchOutlined,
+  FileTextOutlined,
+  ShoppingOutlined,
+  LogoutOutlined,
+  SendOutlined
 } from '@ant-design/icons';
 import { Link, useLocation, history } from 'umi';
 import { message } from 'antd';
@@ -28,7 +32,7 @@ const HeaderSearch: React.FC = () => {
   const params = new URLSearchParams(location.search);
   const [val, setVal] = useState(params.get('q') || '');
 
-  React.useEffect(() => {
+  useEffect(() => {
     const p = new URLSearchParams(location.search);
     setVal(p.get('q') || '');
   }, [location.search]);
@@ -61,7 +65,7 @@ const ShopLayout: React.FC = ({ children }) => {
   const [currentUser, setCurrentUser] = useState<any>(null);
   const [unreadCount, setUnreadCount] = useState(2);
 
-  React.useEffect(() => {
+  useEffect(() => {
     try {
       const u = localStorage.getItem('user');
       if (u) {
@@ -122,7 +126,6 @@ const ShopLayout: React.FC = ({ children }) => {
                     
                     {/* Top Row: 4 Columns */}
                     <div className="mega-grid-row">
-                      {/* Column 1 */}
                       <div className="mega-col">
                         <a onClick={() => handleQuickTab('Làm sạch da')} className="mega-col-heading" style={{ cursor: 'pointer' }}>
                           LÀM SẠCH DA <span className="heading-arrow">›</span>
@@ -135,7 +138,6 @@ const ShopLayout: React.FC = ({ children }) => {
                         </div>
                       </div>
 
-                      {/* Column 2 */}
                       <div className="mega-col">
                         <a onClick={() => handleQuickTab('Cân bằng da')} className="mega-col-heading" style={{ cursor: 'pointer' }}>
                           CÂN BẰNG DA <span className="heading-arrow">›</span>
@@ -148,7 +150,6 @@ const ShopLayout: React.FC = ({ children }) => {
                         </div>
                       </div>
 
-                      {/* Column 3 */}
                       <div className="mega-col">
                         <a onClick={() => handleQuickTab('Dưỡng ẩm')} className="mega-col-heading" style={{ cursor: 'pointer' }}>
                           DƯỠNG ẨM <span className="heading-arrow">›</span>
@@ -162,7 +163,6 @@ const ShopLayout: React.FC = ({ children }) => {
                         </div>
                       </div>
 
-                      {/* Column 4 */}
                       <div className="mega-col">
                         <a onClick={() => handleQuickTab('Chống nắng')} className="mega-col-heading" style={{ cursor: 'pointer' }}>
                           CHỐNG NẮNG <span className="heading-arrow">›</span>
@@ -178,7 +178,6 @@ const ShopLayout: React.FC = ({ children }) => {
 
                     {/* Bottom Row: 3 Columns */}
                     <div className="mega-grid-row bottom-row">
-                      {/* Column 1 */}
                       <div className="mega-col">
                         <a onClick={() => handleQuickTab('Phục hồi')} className="mega-col-heading" style={{ cursor: 'pointer' }}>
                           PHỤC HỒI DA <span className="heading-arrow">›</span>
@@ -191,7 +190,6 @@ const ShopLayout: React.FC = ({ children }) => {
                         </div>
                       </div>
 
-                      {/* Column 2 */}
                       <div className="mega-col">
                         <a onClick={() => handleQuickTab('Tất cả')} className="mega-col-heading" style={{ cursor: 'pointer' }}>
                           BỘ SẢN PHẨM <span className="heading-arrow">›</span>
@@ -204,7 +202,6 @@ const ShopLayout: React.FC = ({ children }) => {
                         </div>
                       </div>
 
-                      {/* Column 3 */}
                       <div className="mega-col">
                         <a onClick={() => handleQuickTab('Tất cả')} className="mega-col-heading" style={{ cursor: 'pointer' }}>
                           QUÀ TẶNG <span className="heading-arrow">›</span>
@@ -257,10 +254,9 @@ const ShopLayout: React.FC = ({ children }) => {
           <div className="header-left">
             <HeaderSearch />
           </div>
-
           
           <div className="header-center logo">
-            <img src={getImg('logo-lunaria.jpg')} alt="LUNARIA Logo" style={{ height: '40px', objectFit: 'contain' }} />
+            <img src={getImg('logo-lunaria.png')} alt="LUNARIA Logo" style={{ height: '40px', objectFit: 'contain' }} />
             LUNARIA
           </div>
 
@@ -281,7 +277,9 @@ const ShopLayout: React.FC = ({ children }) => {
                 {currentUser ? (
                   <div className="user-dropdown-content logged-in">
                     <div className="user-header">
-                      <span className="avatar">👤</span>
+                      <span className="avatar">
+                        <UserOutlined />
+                      </span>
                       <div className="user-info">
                         <strong>{currentUser.email.split('@')[0]}</strong>
                         <span>Thành viên Lunaria</span>
@@ -289,16 +287,16 @@ const ShopLayout: React.FC = ({ children }) => {
                     </div>
                     <div className="user-menu-list">
                       <Link to="/account" className="user-menu-item">
-                        <span className="icon">📄</span> Thông tin tài khoản
+                        <FileTextOutlined className="icon" /> Thông tin tài khoản
                       </Link>
                       <Link to="/orders" className="user-menu-item">
-                        <span className="icon">📦</span> Đơn mua của tôi
+                        <ShoppingOutlined className="icon" /> Đơn mua của tôi
                       </Link>
                       <Link to="/notifications" className="user-menu-item">
-                        <span className="icon">🔔</span> Thông báo của tôi {unreadCount > 0 && `(${unreadCount})`}
+                        <BellOutlined className="icon" /> Thông báo của tôi {unreadCount > 0 && `(${unreadCount})`}
                       </Link>
                       <a onClick={handleLogout} className="user-menu-item logout">
-                        <span className="icon">🚪</span> Đăng xuất
+                        <LogoutOutlined className="icon" /> Đăng xuất
                       </a>
                     </div>
                   </div>
@@ -332,34 +330,50 @@ const ShopLayout: React.FC = ({ children }) => {
       {/* Footer */}
       <footer className="shop-footer">
         <div className="footer-content">
-          <div className="brand-info">
+          {/* Cột 1: Thông tin thương hiệu */}
+          <div className="footer-col brand-info">
             <div className="logo">
-              <img src={getImg('logo-lunaria.jpg')} alt="LUNARIA Logo" style={{ height: '50px', objectFit: 'contain', marginBottom: '10px' }} />
+              <img src={getImg('logo-lunaria-footer.png')} alt="LUNARIA Logo" style={{ height: '40px', objectFit: 'contain', marginBottom: '10px' }} />
               LUNARIA
             </div>
+            <p className="brand-desc">Thương hiệu mỹ phẩm thiên nhiên hàng đầu, mang đến vẻ đẹp thuần khiết và an toàn cho làn da của bạn.</p>
             <div className="work-hours">
               <h4>Giờ làm việc</h4>
-              <p>Thứ 2-Thứ 7: 8:00 - 22:00</p>
+              <p>Thứ 2 - Thứ 7: 8:00 - 22:00</p>
               <p>Chủ nhật: Đóng cửa</p>
             </div>
           </div>
           
-          <div className="footer-links">
-            <h4>Menu</h4>
+          {/* Cột 2: Menu / Về chúng tôi */}
+          <div className="footer-col footer-links">
+            <h4>Về Lunaria</h4>
             <ul>
-              <li><Link to="/home">Home</Link></li>
-              <li><Link to="/about">About</Link></li>
-              <li><Link to="/products">Shop</Link></li>
-              <li><Link to="/blog">Blogs</Link></li>
-              <li><Link to="/contact">Contact</Link></li>
+              <li><Link to="/home">Trang chủ</Link></li>
+              <li><Link to="/about">Về chúng tôi</Link></li>
+              <li><Link to="/products">Cửa hàng</Link></li>
+              <li><Link to="/blog">Blog làm đẹp</Link></li>
+              <li><Link to="/contact">Liên hệ</Link></li>
             </ul>
           </div>
 
-          <div className="footer-contact">
-            <h4>Liên hệ</h4>
+          {/* Cột 3: Chính sách hỗ trợ */}
+          <div className="footer-col footer-links">
+            <h4>Hỗ trợ khách hàng</h4>
+            <ul>
+              <li><Link to="/policy/shipping">Chính sách giao hàng</Link></li>
+              <li><Link to="/policy/return">Chính sách đổi trả</Link></li>
+              <li><Link to="/policy/privacy">Bảo mật thông tin</Link></li>
+              <li><Link to="/faq">Câu hỏi thường gặp (FAQ)</Link></li>
+              <li><Link to="/loyalty">Chương trình thành viên</Link></li>
+            </ul>
+          </div>
+
+          {/* Cột 4: Liên hệ & Đăng ký */}
+          <div className="footer-col footer-contact">
+            <h4>Liên hệ với chúng tôi</h4>
             <div className="contact-item">
               <PhoneOutlined />
-              <span>0867116469</span>
+              <span>0867 116 469</span>
             </div>
             <div className="contact-item">
               <MailOutlined />
@@ -370,6 +384,15 @@ const ShopLayout: React.FC = ({ children }) => {
               <span>118 Hoàng Quốc Việt, Cầu Giấy, Hà Nội</span>
             </div>
             
+            {/* Form đăng ký nhận tin */}
+            <div className="newsletter-box">
+              <h4>Đăng ký nhận ưu đãi</h4>
+              <div className="newsletter-input-group">
+                <input type="email" placeholder="Email của bạn..." />
+                <button><SendOutlined /></button>
+              </div>
+            </div>
+
             <div className="social-icons">
               <div className="social-icon"><FacebookFilled /></div>
               <div className="social-icon"><TwitterCircleFilled /></div>
@@ -377,8 +400,9 @@ const ShopLayout: React.FC = ({ children }) => {
             </div>
           </div>
         </div>
+        
         <div className="footer-bottom">
-          <p>Copyright@2026_Lunaria</p>
+          <p>Copyright © 2026 Lunaria. All rights reserved.</p>
         </div>
       </footer>
     </div>

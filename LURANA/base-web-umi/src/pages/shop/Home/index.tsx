@@ -9,6 +9,7 @@ import QuoteSection from './components/QuoteSection';
 import StepsSection from './components/StepsSection';
 import GallerySection from './components/GallerySection';
 import ContactSection from './components/ContactSection';
+<<<<<<< HEAD
 import { getImg } from './utils';
 import './index.less';
 
@@ -26,6 +27,16 @@ const Home: React.FC = () => {
         backgroundAttachment: 'fixed'
       } : {}}
     >
+=======
+import './index.less';
+
+const Home: React.FC = () => {
+  return (
+    <div className="home-page-master-container">
+      {/* Nền tổng cục của cả trang đã được chuyển thành màu trắng mặc định (#ffffff) 
+        để không làm ảnh hưởng hay đè lên ảnh nền riêng biệt của phần HeroSection.
+      */}
+>>>>>>> origin/main
       <HeroSection />
       <AboutSection />
       <EssenceSection />
@@ -40,4 +51,8 @@ const Home: React.FC = () => {
   );
 };
 
+<<<<<<< HEAD
 export default Home;
+=======
+export default Home;
+>>>>>>> origin/main

@@ -7,6 +7,7 @@ import { SkinType, SkinTypeDocument } from './schemas/skin-type.schema';
 import { ListProductsDto } from './dto/list-products.dto';
 import { CreateProductDto } from './dto/create-product.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
+import { PromotionsService } from '../promotions/promotions.service';
 
 @Injectable()
 export class ProductsService {
@@ -14,6 +15,7 @@ export class ProductsService {
     @InjectModel(Product.name) private productModel: Model<ProductDocument>,
     @InjectModel(Category.name) private categoryModel: Model<CategoryDocument>,
     @InjectModel(SkinType.name) private skinTypeModel: Model<SkinTypeDocument>,
+    private readonly promotionsService: PromotionsService, // <-- Đã inject
   ) {}
 
   private generateSlug(name: string): string {
@@ -68,6 +70,7 @@ export class ProductsService {
     return product;
   }
 
+  // Lấy 1 Sản phẩm hiển thị cho User xem (Có kèm giá Flash Sale)
   async findOnePublic(id: string) {
     if (!Types.ObjectId.isValid(id)) throw new BadRequestException('Invalid Product ID');
     
@@ -83,7 +86,20 @@ export class ProductsService {
       await product.populate({ path: 'skinTypes', select: 'name code', options: { strictPopulate: false } });
     } catch (err) {}
 
-    return product;
+    // Gắn giá Sale vào từng variant
+    const productObj = product.toObject();
+    productObj.variants = await Promise.all(
+      productObj.variants.map(async (variant: any) => {
+        const activePrice = await this.promotionsService.calculateActivePrice(productObj._id.toString(), variant.priceSell);
+        return {
+          ...variant,
+          originalPrice: variant.priceSell, 
+          priceSell: activePrice            
+        };
+      })
+    );
+
+    return productObj;
   }
 
   async update(id: string, dto: UpdateProductDto): Promise<ProductDocument> {
@@ -108,7 +124,6 @@ export class ProductsService {
     if (!updated) throw new NotFoundException('Update failed');
     return updated;
   }
-
   async findAll(query: ListProductsDto) {
     const { search, category, skinTypes, minPrice, maxPrice, page = 1, limit = 10 } = query;
     const filters: any = { isDeleted: false, isActive: true };
@@ -148,17 +163,27 @@ export class ProductsService {
 
     const data = await Promise.all(
       rawProducts.map(async (product) => {
+        let popProduct: any = product;
         try {
           if (product.category && Types.ObjectId.isValid(product.category.toString()) && product.category.toString().length === 24) {
-            return await product.populate([
+            popProduct = await product.populate([
               { path: 'category', select: 'name code slug', options: { strictPopulate: false } },
               { path: 'skinTypes', select: 'name code', options: { strictPopulate: false } }
             ]);
           }
-          return product;
-        } catch (err) {
-          return product;
-        }
+        } catch (err) {}
+        const productObj = popProduct.toObject ? popProduct.toObject() : popProduct;
+        productObj.variants = await Promise.all(
+          productObj.variants.map(async (variant: any) => {
+            const activePrice = await this.promotionsService.calculateActivePrice(productObj._id.toString(), variant.priceSell);
+            return {
+              ...variant,
+              originalPrice: variant.priceSell,
+              priceSell: activePrice
+            };
+          })
+        );
+        return productObj;
       })
     );
     

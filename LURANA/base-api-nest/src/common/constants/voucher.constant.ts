@@ -1,16 +1,13 @@
 export enum VoucherStatus {
   DRAFT = 'DRAFT',
   ACTIVE = 'ACTIVE',
-  EXPIRED = 'EXPIRED',
   DISABLED = 'DISABLED',
-  UPCOMING = 'UPCOMING',
-  ENDED = 'ENDED',
+  EXPIRED = 'EXPIRED',
 }
 
 export enum VoucherCustomerScope {
   ALL_CUSTOMERS = 'ALL_CUSTOMERS',
-  NEW_CUSTOMERS = 'NEW_CUSTOMERS',
-  VIP_CUSTOMERS = 'VIP_CUSTOMERS',
+  SPECIFIC_CUSTOMERS = 'SPECIFIC_CUSTOMERS',
 }
 
 export enum VoucherDiscountType {
@@ -25,17 +22,16 @@ export enum VoucherApplyScope {
 
 export enum VoucherRepeatType {
   NONE = 'NONE',
-  DAILY = 'DAILY',
   WEEKLY = 'WEEKLY',
+  MONTHLY = 'MONTHLY',
 }
 
 export const VOUCHER_CODE_REGEX = /^[A-Z0-9_]+$/;
 
 export const VoucherErrorMessage = {
-  DUPLICATE_CODE: 'Voucher code already exists',
-  INVALID_DATE_RANGE: 'End date must be greater than or equal to start date',
-  INVALID_FORMAT:
-    'Voucher code must contain only uppercase letters, numbers, and underscores',
-  EXPIRED: 'Voucher has expired',
-  OUT_OF_GOLDEN_HOUR: 'Voucher is not available at this time',
+  INVALID_FORMAT: 'Mã voucher chỉ được chứa chữ hoa, số và dấu gạch dưới.',
+  INVALID_DATE_RANGE: 'Ngày kết thúc không được trước ngày bắt đầu.',
+  DUPLICATE_CODE: 'Mã voucher này đã tồn tại trên hệ thống.',
+  EXPIRED: 'Mã voucher đã hết hạn.',
+  OUT_OF_GOLDEN_HOUR: 'Chưa đến khung giờ vàng áp dụng voucher này.',
 };

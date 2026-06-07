@@ -1,12 +1,8 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { Document, Types } from 'mongoose';
-import {
-  VoucherStatus,
-  VoucherCustomerScope,
-  VoucherDiscountType,
-  VoucherApplyScope,
-  VoucherRepeatType,
-} from 'src/common/constants/voucher.constant';
+import { VoucherStatus, VoucherCustomerScope, VoucherDiscountType, VoucherApplyScope, VoucherRepeatType } from 'src/common/constants/voucher.constant';
+
+export type VoucherDocument = Voucher & Document;
 
 @Schema({ timestamps: true, collection: 'vouchers' })
 export class Voucher {
@@ -19,11 +15,7 @@ export class Voucher {
   @Prop({ required: true, enum: VoucherStatus, default: VoucherStatus.DRAFT })
   status!: VoucherStatus;
 
-  @Prop({
-    required: true,
-    enum: VoucherCustomerScope,
-    default: VoucherCustomerScope.ALL_CUSTOMERS,
-  })
+  @Prop({ required: true, enum: VoucherCustomerScope, default: VoucherCustomerScope.ALL_CUSTOMERS })
   customerScope!: VoucherCustomerScope;
 
   @Prop({ required: true, enum: VoucherDiscountType })
@@ -47,11 +39,7 @@ export class Voucher {
   @Prop({ required: false })
   goldenHourEnd?: string;
 
-  @Prop({
-    required: true,
-    enum: VoucherRepeatType,
-    default: VoucherRepeatType.NONE,
-  })
+  @Prop({ required: true, enum: VoucherRepeatType, default: VoucherRepeatType.NONE })
   repeatType!: VoucherRepeatType;
 
   @Prop({ type: [String], default: [] })
@@ -61,5 +49,4 @@ export class Voucher {
   applicableProductIds?: Types.ObjectId[];
 }
 
-export type VoucherDocument = Voucher & Document;
 export const VoucherSchema = SchemaFactory.createForClass(Voucher);

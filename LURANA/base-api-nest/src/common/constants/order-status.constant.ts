@@ -1,5 +1,5 @@
 export enum OrderStatus {
-  PENDING = 'pending', // Chờ duyệt
+  PENDING = 'pending',     // Chờ duyệt
   CONFIRMED = 'confirmed', // Đã duyệt
   PROCESSING = 'PROCESSING',
   CANCELLED = 'cancelled', // Đã hủy

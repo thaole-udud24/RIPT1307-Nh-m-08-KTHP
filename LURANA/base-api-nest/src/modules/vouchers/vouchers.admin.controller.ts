@@ -1,22 +1,13 @@
-import {
-  Controller,
-  Get,
-  Patch,
-  Param,
-  Query,
-  UseGuards,
-  Body,
-  Post,
-} from '@nestjs/common';
+import { Controller, Get, Patch, Param, Query, UseGuards, Body, Post } from '@nestjs/common';
 import { VouchersService } from './vouchers.service';
 import { JwtAuthGuard } from 'src/common/guards/jwt-auth.guard';
 import { RolesGuard } from 'src/common/guards/roles.guard';
 import { Roles } from 'src/common/decorators/roles.decorator';
 import { CreateVoucherDto } from './dto/create-voucher.dto';
-
-const RolesDecorator = Roles as (...roles: string[]) => ClassDecorator;
 import { UpdateVoucherDto } from './dto/update-voucher.dto';
 import { ListVouchersDto } from './dto/list-vouchers.dto';
+
+const RolesDecorator = Roles as (...roles: string[]) => ClassDecorator;
 
 @Controller('admin/vouchers')
 @UseGuards(JwtAuthGuard, RolesGuard)

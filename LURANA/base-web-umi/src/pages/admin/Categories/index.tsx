@@ -17,6 +17,7 @@ import {
   Menu,
   message,
   Popover,
+  Select,
 } from 'antd';
 
 import {
@@ -58,6 +59,15 @@ export default function CategoriesPage() {
 
   const [searchText, setSearchText] =
     useState('');
+
+  const [statusFilter, setStatusFilter] =
+    useState('ALL');
+
+  const [tempStatus, setTempStatus] =
+    useState('ALL');
+
+  const [filterOpen, setFilterOpen] =
+    useState(false);
 
   const [openModal, setOpenModal] =
     useState(false);
@@ -112,7 +122,7 @@ export default function CategoriesPage() {
 
   useEffect(() => {
     setCurrentPage(1);
-  }, [searchText]);
+  }, [searchText, statusFilter]);
 
   // =========================
   // SEARCH
@@ -120,24 +130,51 @@ export default function CategoriesPage() {
 
   const filteredCategories =
     useMemo(() => {
-      return categories.filter(
-        (item) =>
-          item.name
-            .toLowerCase()
-            .includes(
-              searchText
-                .trim()
-                .toLowerCase(),
-            ) ||
-          item.code
-            .toLowerCase()
-            .includes(
-              searchText
-                .trim()
-                .toLowerCase(),
-            ),
-      );
-    }, [categories, searchText]);
+      let result =
+        categories.filter(
+          (item) =>
+            item.name
+              .toLowerCase()
+              .includes(
+                searchText
+                  .trim()
+                  .toLowerCase(),
+              ) ||
+            item.code
+              .toLowerCase()
+              .includes(
+                searchText
+                  .trim()
+                  .toLowerCase(),
+              ),
+        );
+
+      // FILTER STATUS
+
+      if (
+        statusFilter !==
+        'ALL'
+      ) {
+        result = result.filter(
+          (item) => {
+            if (
+              statusFilter ===
+              'ACTIVE'
+            ) {
+              return item.active;
+            }
+
+            return !item.active;
+          },
+        );
+      }
+
+      return result;
+    }, [
+      categories,
+      searchText,
+      statusFilter,
+    ]);
 
   // =========================
   // PAGINATION
@@ -255,12 +292,53 @@ export default function CategoriesPage() {
         Tùy chỉnh bộ lọc
       </div>
 
+      <div className="filter-group">
+        <label>Trạng thái</label>
+
+        <Select
+          value={tempStatus}
+          onChange={setTempStatus}
+          style={{ width: '100%' }}
+          placeholder="Chọn trạng thái"
+          options={[
+            {
+              label: 'Tất cả',
+              value: 'ALL',
+            },
+
+            {
+              label: 'Hoạt động',
+              value: 'ACTIVE',
+            },
+
+            {
+              label: 'Ẩn',
+              value: 'INACTIVE',
+            },
+          ]}
+        />
+      </div>
+
       <div className="filter-actions">
-        <Button>
+        <Button
+          onClick={() => {
+            setTempStatus('ALL');
+          }}
+        >
           Đặt lại
         </Button>
 
-        <Button type="primary">
+        <Button
+          type="primary"
+          className="apply-filter-btn"
+          onClick={() => {
+            setStatusFilter(
+              tempStatus,
+            );
+
+            setFilterOpen(false);
+          }}
+        >
           Áp dụng
         </Button>
       </div>
@@ -533,6 +611,11 @@ export default function CategoriesPage() {
             content={filterContent}
             trigger="click"
             placement="bottomRight"
+            visible={filterOpen}
+            onVisibleChange={
+              setFilterOpen
+            }
+            overlayClassName="filter-popover"
           >
             <Button
               icon={<FilterOutlined />}

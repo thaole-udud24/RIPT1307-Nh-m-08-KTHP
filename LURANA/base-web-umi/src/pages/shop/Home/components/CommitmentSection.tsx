@@ -1,63 +1,102 @@
-import React from 'react';
-import { SafetyCertificateOutlined, HeartFilled, ExperimentOutlined, SmileOutlined, StarOutlined } from '@ant-design/icons';
+import React, { useEffect } from 'react';
+import { Row, Col } from 'antd';
+import { 
+  ExperimentOutlined, 
+  HeartOutlined, 
+  SafetyOutlined, 
+  CompassOutlined, 
+  SmileOutlined, 
+  SolutionOutlined 
+} from '@ant-design/icons';
 import { getImg } from '../utils';
+import CommitBox from '../UI/CommitBox';
+import styles from '../UI/CommitBox/index.module.less';
 
 const CommitmentSection: React.FC = () => {
+  useEffect(() => {
+    const link = document.createElement('link');
+    link.href = 'https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;1,400&family=Montserrat:wght@400;500;600;700&display=swap';
+    document.head.appendChild(link);
+  }, []);
+
+  const leftCommits = [
+    {
+      icon: <CompassOutlined />,
+      title: 'Thuần khiết từ thiên nhiên',
+      desc: 'Thành phần có nguồn gốc tự nhiên, được chọn lọc cẩn trọng để đảm bảo sự dịu lành cho làn da.',
+    },
+    {
+      icon: <HeartOutlined />,
+      title: 'Tôn trọng sự sống',
+      desc: 'LUNARIA cam kết không thử nghiệm trên động vật trong toàn bộ quá trình phát triển sản phẩm.',
+    },
+    {
+      icon: <ExperimentOutlined />,
+      title: 'Hướng đến vẻ đẹp bền vững',
+      desc: 'Bao bì và quy trình sản xuất hướng đến sự bền vững, giảm tác động đến môi trường.',
+    }
+  ];
+
+  const rightCommits = [
+    {
+      icon: <SafetyOutlined />,
+      title: 'Kiểm chứng khoa học từ da liễu',
+      desc: 'Sản phẩm được kiểm nghiệm da liễu, an toàn và phù hợp với cả làn da nhạy cảm.',
+    },
+    {
+      icon: <SmileOutlined />,
+      title: 'Tinh giản để lành tính',
+      desc: 'Loại bỏ paraben, sulfate và các chất dễ gây kích ứng, ưu tiên sự lành tính cho da.',
+    },
+    {
+      icon: <SolutionOutlined />,
+      title: 'Minh bạch tạo nên niềm tin',
+      desc: 'Nguồn gốc nguyên liệu và quy trình sản xuất được công bố rõ ràng, tạo dụng niềm tin lâu dài.',
+    }
+  ];
+
   return (
-    <section className="commitment-section">
-      <div className="section-title-wrapper">
-        <h2>Cam Kết Từ LUNARIA</h2>
+    <section className={styles.commitmentSection}>
+      <div className={styles.titleContainer}>
+        <h2 className={styles.sectionTitle}>Cam Kết Từ LUNARIA</h2>
       </div>
-      <div className="commitment-grid">
-        <div className="commitment-col">
-          <div className="commit-box">
-            <SafetyCertificateOutlined className="commit-icon" />
-            <div className="commit-text">
-              <h5>Thuần khiết từ thiên nhiên</h5>
-              <p>Thành phần có nguồn gốc tự nhiên, được chọn lọc cẩn trọng.</p>
+
+      <div className={styles.gridContainer}>
+        <Row gutter={[32, 0]} align="stretch" justify="center">
+          <Col xs={24} lg={8}>
+            <div className={styles.sideColumn}>
+              {leftCommits.map((item, index) => (
+                <CommitBox
+                  key={index}
+                  icon={item.icon}
+                  title={item.title}
+                  desc={item.desc}
+                  isRightAlign={true}
+                />
+              ))}
             </div>
-          </div>
-          <div className="commit-box">
-            <HeartFilled className="commit-icon" />
-            <div className="commit-text">
-              <h5>Tôn trọng sự sống</h5>
-              <p>LUNARIA cam kết không thử nghiệm trên động vật.</p>
+          </Col>
+
+          <Col xs={24} lg={8} style={{ display: 'flex', alignItems: 'center' }}>
+            <div className={styles.centerImageWrapper}>
+              <img src={getImg('anh3-commitment.png')} alt="Frudia Pudding Cream" />
             </div>
-          </div>
-          <div className="commit-box">
-            <ExperimentOutlined className="commit-icon" />
-            <div className="commit-text">
-              <h5>Hướng đến vẻ đẹp bền vững</h5>
-              <p>Bao bì và quy trình sản xuất hướng đến sự bền vững.</p>
+          </Col>
+
+          <Col xs={24} lg={8}>
+            <div className={styles.sideColumn}>
+              {rightCommits.map((item, index) => (
+                <CommitBox
+                  key={index}
+                  icon={item.icon}
+                  title={item.title}
+                  desc={item.desc}
+                  isRightAlign={false}
+                />
+              ))}
             </div>
-          </div>
-        </div>
-        <div className="commitment-center-img">
-          <img src={getImg('anh3-commitment.png')} alt="Ảnh 3: Cam kết (Hũ kem)" />
-        </div>
-        <div className="commitment-col">
-          <div className="commit-box">
-            <SafetyCertificateOutlined className="commit-icon" />
-            <div className="commit-text">
-              <h5>Kiểm chứng khoa học từ da liễu</h5>
-              <p>Sản phẩm được kiểm nghiệm da liễu, an toàn và phù hợp.</p>
-            </div>
-          </div>
-          <div className="commit-box">
-            <SmileOutlined className="commit-icon" />
-            <div className="commit-text">
-              <h5>Tinh giản để lành tính</h5>
-              <p>Loại bỏ paraben, sulfate và các chất gây kích ứng.</p>
-            </div>
-          </div>
-          <div className="commit-box">
-            <StarOutlined className="commit-icon" />
-            <div className="commit-text">
-              <h5>Minh bạch tạo nên niềm tin</h5>
-              <p>Nguồn gốc nguyên liệu và quy trình sản xuất được công bố rõ ràng.</p>
-            </div>
-          </div>
-        </div>
+          </Col>
+        </Row>
       </div>
     </section>
   );

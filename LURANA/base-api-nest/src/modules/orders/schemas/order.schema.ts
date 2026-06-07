@@ -6,7 +6,7 @@ import { PaymentMethod } from 'src/common/constants/payment-method.constant';
 export type OrderDocument = Order & Document;
 
 @Schema({ timestamps: true })
-export class Order extends Document {
+export class Order {
   @Prop({ required: true, unique: true })
   orderCode!: string;
 
@@ -14,31 +14,53 @@ export class Order extends Document {
   userId!: Types.ObjectId;
 
   @Prop({ type: Array, required: true })
-  items!: any[]; // Snapshot lưu: productId, name, variantName, quantity, priceSell, priceImport, profit
+  items!: any[];
 
-  @Prop({ required: true, min: 0 })
+  @Prop({ default: 0 })
+  originalTotal!: number;
+
+  @Prop({ default: 0 })
+  shippingFee!: number;
+
+  @Prop({ default: 0 })
+  discountAmount!: number;
+
+  @Prop({ type: String, default: null })
+  appliedVoucher!: string;
+
+  @Prop({ required: true })
   totalAmount!: number;
 
   @Prop({ type: Object, required: true })
-  shippingAddress!: any;
+  shippingAddress!: {
+    fullName: string;
+    phone: string;
+    addressLine: string;
+    province: string;
+    district: string;
+    ward: string;
+  };
 
-  @Prop({ enum: OrderStatus, default: OrderStatus.PENDING })
-  status!: OrderStatus;
-
-  @Prop({ enum: PaymentMethod, default: PaymentMethod.COD })
+  @Prop({ type: String, enum: PaymentMethod, required: true })
   paymentMethod!: PaymentMethod;
 
-  @Prop({ default: 'UNPAID' })
-  paymentStatus!: 'UNPAID' | 'PAID';
+  @Prop({ type: String })
+  note!: string;
 
-  @Prop({ required: false })
-  qrUrl?: string;
+  @Prop({ type: String, enum: OrderStatus, default: OrderStatus.PENDING })
+  status!: OrderStatus;
 
-  @Prop({ required: true })
+  @Prop({ type: String, default: 'UNPAID' })
+  paymentStatus!: string;
+
+  @Prop({ type: String })
+  qrUrl!: string;
+
+  @Prop({ type: Date })
   paymentTimeout!: Date;
 
-  @Prop({ required: false })
-  cancelReason?: string;
+  @Prop({ type: String })
+  cancelReason!: string;
 }
 
 export const OrderSchema = SchemaFactory.createForClass(Order);

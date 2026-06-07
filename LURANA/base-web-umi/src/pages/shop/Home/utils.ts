@@ -4,4 +4,8 @@ export const getImg = (name: string) => {
   } catch (err) {
     return '';
   }
+<<<<<<< HEAD
 };
+=======
+};
+>>>>>>> origin/main

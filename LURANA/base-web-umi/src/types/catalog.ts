@@ -23,9 +23,21 @@ export interface ProductType {
 
   images: string[];
 
+<<<<<<< HEAD
   active: boolean;
 
   variants?: VariantType[];
+=======
+  image?: string;
+
+  active: boolean;
+
+  variants?: VariantType[];
+
+  categoryId?: number;
+
+  skinTypeId?: number;
+>>>>>>> origin/main
 }
 
 export interface VariantType {
@@ -48,4 +60,8 @@ export interface CategoryType {
   description?: string;
 
   active: boolean;
+<<<<<<< HEAD
 }
+=======
+}
+>>>>>>> origin/main

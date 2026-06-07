@@ -1,7 +1,8 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { HydratedDocument } from 'mongoose';
 
-export type PasswordResetTokenDocument = HydratedDocument<PasswordResetToken>;
+export type PasswordResetTokenDocument =
+  HydratedDocument<PasswordResetToken>;
 
 @Schema({
   timestamps: true,

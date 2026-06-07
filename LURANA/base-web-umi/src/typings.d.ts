@@ -7,8 +7,6 @@ declare namespace API {
   };
 };
 
-<<<<<<< HEAD
-=======
 declare module '*.png' {
   const src: string;
   export default src;
@@ -27,5 +25,7 @@ declare module '*.jpeg' {
 declare module '*.svg' {
   const src: string;
   export default src;
+
 }
->>>>>>> 45b5da6cbee2c367b805619f9783ea6b8b97f000
+
+

@@ -1,8 +1,4 @@
-import {
-  Injectable,
-  BadRequestException,
-  NotFoundException,
-} from '@nestjs/common';
+import { Injectable, BadRequestException, NotFoundException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types, UpdateQuery } from 'mongoose';
 import { CreateVoucherDto } from './dto/create-voucher.dto';
@@ -10,7 +6,6 @@ import { UpdateVoucherDto } from './dto/update-voucher.dto';
 import { ListVouchersDto } from './dto/list-vouchers.dto';
 import { ApplyVoucherDto } from './dto/apply-voucher.dto';
 import { Voucher, VoucherDocument } from './schemas/voucher.schema';
-
 import {
   VoucherStatus,
   VoucherCustomerScope,
@@ -23,18 +18,14 @@ import {
 
 @Injectable()
 export class VouchersService {
-  constructor(
-    @InjectModel(Voucher.name) private voucherModel: Model<VoucherDocument>){}
+  constructor(@InjectModel(Voucher.name) private voucherModel: Model<VoucherDocument>) {}
 
   private normalizeCode(code: string) {
     return code?.trim().toUpperCase() ?? '';
   }
 
   private buildFilter(query: ListVouchersDto) {
-    const filter: {
-      status?: VoucherStatus;
-      $or?: Array<{ voucherCode: RegExp } | { voucherName: RegExp }>;
-    } = {};
+    const filter: any = {};
     if (query.status) filter.status = query.status;
     if (query.search) {
       filter.$or = [
@@ -63,21 +54,16 @@ export class VouchersService {
 
     if (
       createVoucherDto.applyScope === VoucherApplyScope.SPECIFIC_PRODUCTS &&
-      (!createVoucherDto.applicableProductIds ||
-        createVoucherDto.applicableProductIds.length === 0)
+      (!createVoucherDto.applicableProductIds || createVoucherDto.applicableProductIds.length === 0)
     ) {
-      throw new BadRequestException(
-        'Danh sách sản phẩm áp dụng không được để trống khi phạm vi là SPECIFIC_PRODUCTS.',
-      );
+      throw new BadRequestException('Danh sách sản phẩm áp dụng không được để trống khi phạm vi là SPECIFIC_PRODUCTS.');
     }
 
     if (
       createVoucherDto.repeatType === VoucherRepeatType.WEEKLY &&
       (!createVoucherDto.repeatDays || createVoucherDto.repeatDays.length === 0)
     ) {
-      throw new BadRequestException(
-        'Vui lòng cung cấp ngày lặp lại khi sử dụng định kỳ WEEKLY.',
-      );
+      throw new BadRequestException('Vui lòng cung cấp ngày lặp lại khi sử dụng định kỳ WEEKLY.');
     }
 
     const voucher = new this.voucherModel({
@@ -97,12 +83,7 @@ export class VouchersService {
     const filter = this.buildFilter(query);
 
     const [data, total] = await Promise.all([
-      this.voucherModel
-        .find(filter)
-        .sort({ createdAt: -1 })
-        .skip(skip)
-        .limit(limit)
-        .exec(),
+      this.voucherModel.find(filter).sort({ createdAt: -1 }).skip(skip).limit(limit).exec(),
       this.voucherModel.countDocuments(filter),
     ]);
 
@@ -110,33 +91,20 @@ export class VouchersService {
   }
 
   async findOne(id: string) {
-    if (!Types.ObjectId.isValid(id)) {
-      throw new BadRequestException('Mã voucher không hợp lệ.');
-    }
+    if (!Types.ObjectId.isValid(id)) throw new BadRequestException('Mã voucher không hợp lệ.');
     const voucher = await this.voucherModel.findById(id).exec();
-    if (!voucher) {
-      throw new NotFoundException('Không tìm thấy voucher.');
-    }
+    if (!voucher) throw new NotFoundException('Không tìm thấy voucher.');
     return voucher;
   }
 
   async update(id: string, updateVoucherDto: UpdateVoucherDto) {
-    if (!Types.ObjectId.isValid(id)) {
-      throw new BadRequestException('Mã voucher không hợp lệ.');
-    }
+    if (!Types.ObjectId.isValid(id)) throw new BadRequestException('Mã voucher không hợp lệ.');
 
-    if (
-      updateVoucherDto.voucherCode &&
-      !VOUCHER_CODE_REGEX.test(this.normalizeCode(updateVoucherDto.voucherCode))
-    ) {
+    if (updateVoucherDto.voucherCode && !VOUCHER_CODE_REGEX.test(this.normalizeCode(updateVoucherDto.voucherCode))) {
       throw new BadRequestException(VoucherErrorMessage.INVALID_FORMAT);
     }
 
-    if (
-      updateVoucherDto.startDate &&
-      updateVoucherDto.endDate &&
-      updateVoucherDto.endDate < updateVoucherDto.startDate
-    ) {
+    if (updateVoucherDto.startDate && updateVoucherDto.endDate && updateVoucherDto.endDate < updateVoucherDto.startDate) {
       throw new BadRequestException(VoucherErrorMessage.INVALID_DATE_RANGE);
     }
 
@@ -145,9 +113,7 @@ export class VouchersService {
       updateVoucherDto.applicableProductIds &&
       updateVoucherDto.applicableProductIds.length === 0
     ) {
-      throw new BadRequestException(
-        'Danh sách sản phẩm áp dụng không được để trống khi phạm vi là SPECIFIC_PRODUCTS.',
-      );
+      throw new BadRequestException('Danh sách sản phẩm áp dụng không được để trống khi phạm vi là SPECIFIC_PRODUCTS.');
     }
 
     if (
@@ -155,63 +121,37 @@ export class VouchersService {
       updateVoucherDto.repeatDays &&
       updateVoucherDto.repeatDays.length === 0
     ) {
-      throw new BadRequestException(
-        'Vui lòng cung cấp ngày lặp lại khi sử dụng định kỳ WEEKLY.',
-      );
+      throw new BadRequestException('Vui lòng cung cấp ngày lặp lại khi sử dụng định kỳ WEEKLY.');
     }
 
-    const updatePayload: UpdateQuery<VoucherDocument> = {
-      ...updateVoucherDto,
-    };
+    const updatePayload: UpdateQuery<VoucherDocument> = { ...updateVoucherDto };
     if (updatePayload.voucherCode) {
-      updatePayload.voucherCode = this.normalizeCode(
-        updatePayload.voucherCode as string,
-      );
+      updatePayload.voucherCode = this.normalizeCode(updatePayload.voucherCode as string);
     }
 
-    const voucher = await this.voucherModel
-      .findByIdAndUpdate(id, updatePayload, { new: true })
-      .exec();
-    if (!voucher) {
-      throw new NotFoundException('Không tìm thấy voucher.');
-    }
+    const voucher = await this.voucherModel.findByIdAndUpdate(id, updatePayload, { new: true }).exec();
+    if (!voucher) throw new NotFoundException('Không tìm thấy voucher.');
     return voucher;
   }
 
   async activate(id: string) {
-    if (!Types.ObjectId.isValid(id)) {
-      throw new BadRequestException('Mã voucher không hợp lệ.');
-    }
-    const voucher = await this.voucherModel
-      .findByIdAndUpdate(id, { status: VoucherStatus.ACTIVE }, { new: true })
-      .exec();
-    if (!voucher) {
-      throw new NotFoundException('Không tìm thấy voucher.');
-    }
+    if (!Types.ObjectId.isValid(id)) throw new BadRequestException('Mã voucher không hợp lệ.');
+    const voucher = await this.voucherModel.findByIdAndUpdate(id, { status: VoucherStatus.ACTIVE }, { new: true }).exec();
+    if (!voucher) throw new NotFoundException('Không tìm thấy voucher.');
     return voucher;
   }
 
   async disable(id: string) {
-    if (!Types.ObjectId.isValid(id)) {
-      throw new BadRequestException('Mã voucher không hợp lệ.');
-    }
-    const voucher = await this.voucherModel
-      .findByIdAndUpdate(id, { status: VoucherStatus.DISABLED }, { new: true })
-      .exec();
-    if (!voucher) {
-      throw new NotFoundException('Không tìm thấy voucher.');
-    }
+    if (!Types.ObjectId.isValid(id)) throw new BadRequestException('Mã voucher không hợp lệ.');
+    const voucher = await this.voucherModel.findByIdAndUpdate(id, { status: VoucherStatus.DISABLED }, { new: true }).exec();
+    if (!voucher) throw new NotFoundException('Không tìm thấy voucher.');
     return voucher;
   }
 
   private isWithinGoldenHour(voucher: Voucher) {
-    if (!voucher.goldenHourStart || !voucher.goldenHourEnd) {
-      return true;
-    }
+    if (!voucher.goldenHourStart || !voucher.goldenHourEnd) return true;
     const now = new Date();
-    const [startHour, startMinute] = voucher.goldenHourStart
-      .split(':')
-      .map(Number);
+    const [startHour, startMinute] = voucher.goldenHourStart.split(':').map(Number);
     const [endHour, endMinute] = voucher.goldenHourEnd.split(':').map(Number);
     const nowMinutes = now.getHours() * 60 + now.getMinutes();
     const fromMinutes = startHour * 60 + startMinute;
@@ -220,33 +160,14 @@ export class VouchersService {
   }
 
   private isWithinWeeklyRepeat(voucher: Voucher) {
-    if (
-      voucher.repeatType !== VoucherRepeatType.WEEKLY ||
-      !voucher.repeatDays?.length
-    ) {
-      return true;
-    }
-    const weekDays = [
-      'SUNDAY',
-      'MONDAY',
-      'TUESDAY',
-      'WEDNESDAY',
-      'THURSDAY',
-      'FRIDAY',
-      'SATURDAY',
-    ];
+    if (voucher.repeatType !== VoucherRepeatType.WEEKLY || !voucher.repeatDays?.length) return true;
+    const weekDays = ['SUNDAY', 'MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY', 'SATURDAY'];
     const today = weekDays[new Date().getDay()];
     return voucher.repeatDays.includes(today);
   }
 
-  private computeDiscount(
-    voucher: Voucher,
-    cartTotal: number,
-    eligibleTotal: number,
-  ) {
-    if (cartTotal <= 0 || eligibleTotal <= 0) {
-      return 0;
-    }
+  private computeDiscount(voucher: Voucher, cartTotal: number, eligibleTotal: number) {
+    if (cartTotal <= 0 || eligibleTotal <= 0) return 0;
     if (voucher.discountType === VoucherDiscountType.PERCENTAGE) {
       return Math.floor((eligibleTotal * voucher.discountValue) / 100);
     }
@@ -255,84 +176,46 @@ export class VouchersService {
 
   async validateVoucher(applyVoucherDto: ApplyVoucherDto) {
     const voucherCode = this.normalizeCode(applyVoucherDto.voucherCode);
-    const voucher = (await this.voucherModel
-      .findOne({ voucherCode })
-      .exec()) as VoucherDocument | null;
-    if (!voucher) {
-      throw new NotFoundException('Voucher không tồn tại.');
-    }
-
-    if (voucher.status !== VoucherStatus.ACTIVE) {
-      throw new BadRequestException('Voucher hiện không khả dụng.');
-    }
-
+    const voucher = (await this.voucherModel.findOne({ voucherCode }).exec()) as VoucherDocument | null;
+    
+    if (!voucher) throw new NotFoundException('Voucher không tồn tại.');
+    if (voucher.status !== VoucherStatus.ACTIVE) throw new BadRequestException('Voucher hiện không khả dụng.');
+    
     const now = new Date();
-    if (now < voucher.startDate) {
-      throw new BadRequestException('Voucher chưa bắt đầu.');
-    }
-
+    if (now < voucher.startDate) throw new BadRequestException('Voucher chưa bắt đầu.');
     if (now > voucher.endDate) {
-      await this.voucherModel
-        .findByIdAndUpdate(voucher._id, { status: VoucherStatus.EXPIRED })
-        .exec();
+      await this.voucherModel.findByIdAndUpdate(voucher._id, { status: VoucherStatus.EXPIRED }).exec();
       throw new BadRequestException(VoucherErrorMessage.EXPIRED);
     }
 
-    if (!this.isWithinGoldenHour(voucher)) {
-      throw new BadRequestException(VoucherErrorMessage.OUT_OF_GOLDEN_HOUR);
-    }
-
-    if (!this.isWithinWeeklyRepeat(voucher)) {
-      throw new BadRequestException(
-        'Voucher chỉ áp dụng trong ngày lặp lại đã cấu hình.',
-      );
-    }
+    if (!this.isWithinGoldenHour(voucher)) throw new BadRequestException(VoucherErrorMessage.OUT_OF_GOLDEN_HOUR);
+    if (!this.isWithinWeeklyRepeat(voucher)) throw new BadRequestException('Voucher chỉ áp dụng trong ngày lặp lại đã cấu hình.');
 
     if (voucher.customerScope !== VoucherCustomerScope.ALL_CUSTOMERS) {
-      if (
-        !applyVoucherDto.customerScope ||
-        applyVoucherDto.customerScope !== voucher.customerScope
-      ) {
-        throw new BadRequestException(
-          'Khách hàng không thuộc phạm vi áp dụng voucher.',
-        );
+      if (!applyVoucherDto.customerScope || applyVoucherDto.customerScope !== voucher.customerScope) {
+        throw new BadRequestException('Khách hàng không thuộc phạm vi áp dụng voucher.');
       }
     }
 
     if (applyVoucherDto.hasDirectDiscount) {
-      throw new BadRequestException(
-        'Voucher không thể áp dụng cho sản phẩm đã có giảm giá trực tiếp.',
-      );
+      throw new BadRequestException('Voucher không thể áp dụng cho sản phẩm đã có giảm giá trực tiếp.');
     }
 
     if (voucher.applyScope === VoucherApplyScope.SPECIFIC_PRODUCTS) {
       if (!applyVoucherDto.productIds?.length) {
-        throw new BadRequestException(
-          'Cần cung cấp danh sách sản phẩm để xác thực voucher.',
-        );
+        throw new BadRequestException('Cần cung cấp danh sách sản phẩm để xác thực voucher.');
       }
-      const matched = applyVoucherDto.productIds.some(
-        (id) =>
-          voucher.applicableProductIds?.some(
-            (productId) => productId.toString() === id,
-          ) ?? false,
+      const matched = applyVoucherDto.productIds.some(id => 
+        voucher.applicableProductIds?.some(productId => productId.toString() === id) ?? false
       );
-      if (!matched) {
-        throw new BadRequestException(
-          'Không có sản phẩm nào trong giỏ phù hợp với voucher.',
-        );
-      }
+      if (!matched) throw new BadRequestException('Không có sản phẩm nào trong giỏ phù hợp với voucher.');
     }
 
-    const eligibleTotal =
-      voucher.applyScope === VoucherApplyScope.SPECIFIC_PRODUCTS
+    const eligibleTotal = voucher.applyScope === VoucherApplyScope.SPECIFIC_PRODUCTS
         ? (applyVoucherDto.eligibleCartTotal ?? applyVoucherDto.cartTotal ?? 0)
         : (applyVoucherDto.cartTotal ?? 0);
-    const discountAmount = this.computeDiscount(
-      voucher,
-      applyVoucherDto.cartTotal ?? 0,
-      eligibleTotal,
-    );
+        
+    const discountAmount = this.computeDiscount(voucher, applyVoucherDto.cartTotal ?? 0, eligibleTotal);
 
     return {
       valid: true,

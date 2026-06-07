@@ -1,0 +1,6 @@
+Tao moi truong: python -m venv .venv
+kich hoat moi truong: .venv\Scripts\activate
+Cai dat thu vien: pip install langchain langchain-community langchain-text-splitters langchain-huggingface langchain-chroma chromadb sentence-transformers pypdf pandas openpyxl langchain-openai
+thay the key trong .env bang key cua minh:
++ key open router
++ key huggingface

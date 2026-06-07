@@ -6,7 +6,14 @@ export class QrService {
     const accountNo = '908112006';
     const template = 'compact2';
     const description = encodeURIComponent(`LURANA ${orderCode}`);
+<<<<<<< HEAD
 
     return `https://img.vietqr.io/image/${bankId}-${accountNo}-${template}.jpg?amount=${amount}&addInfo=${description}`;
   }
 }
+=======
+    
+    return `https://img.vietqr.io/image/${bankId}-${accountNo}-${template}.jpg?amount=${amount}&addInfo=${description}`;
+  }
+}
+>>>>>>> origin/main

@@ -6,6 +6,37 @@ import {
   MOCK_PRODUCTS,
 } from '../../../mock/catalog';
 
+<<<<<<< HEAD
+=======
+// =========================
+// NORMALIZE PRODUCT
+// =========================
+
+const normalizeProduct = (
+  product: any,
+): ProductType => {
+
+  return {
+
+    ...product,
+
+    image:
+      product.image ||
+      product.thumbnail ||
+      '',
+
+    price:
+      Number(product.price) || 0,
+
+    stock:
+      Number(product.stock) || 0,
+
+    variants:
+      product.variants || [],
+  };
+};
+
+>>>>>>> origin/main
 const PRODUCT_KEY = 'products';
 
 // =========================
@@ -48,9 +79,20 @@ const getStoredProducts =
           PRODUCT_KEY,
         );
 
+<<<<<<< HEAD
       return products
         ? JSON.parse(products)
         : [];
+=======
+      const parsedProducts =
+        products
+          ? JSON.parse(products)
+          : [];
+
+      return parsedProducts.map(
+        normalizeProduct,
+      );
+>>>>>>> origin/main
     } catch (error) {
       console.error(
         'Parse products error:',
@@ -102,6 +144,33 @@ export async function getAdminProducts(): Promise<
 }
 
 // =========================
+<<<<<<< HEAD
+=======
+// GET PRODUCTS
+// PUBLIC FOR SHOP/PROMOTION
+// =========================
+
+export async function getProducts(): Promise<
+  ProductType[]
+> {
+
+  try {
+
+    return getStoredProducts();
+
+  } catch (error) {
+
+    console.error(
+      'Get products error:',
+      error,
+    );
+
+    return [];
+  }
+}
+
+// =========================
+>>>>>>> origin/main
 // GET PRODUCT DETAIL
 // =========================
 
@@ -156,7 +225,11 @@ export async function createProduct(
       getStoredProducts();
 
     const newProduct: ProductType =
+<<<<<<< HEAD
       {
+=======
+      normalizeProduct({
+>>>>>>> origin/main
         ...product,
 
         id:
@@ -165,7 +238,11 @@ export async function createProduct(
 
         variants:
           product.variants || [],
+<<<<<<< HEAD
       };
+=======
+      });
+>>>>>>> origin/main
 
     const updatedProducts = [
       newProduct,
@@ -221,10 +298,18 @@ export async function updateProduct(
         if (
           item.id === productId
         ) {
+<<<<<<< HEAD
           updatedProduct = {
             ...item,
             ...payload,
           };
+=======
+          updatedProduct =
+            normalizeProduct({
+              ...item,
+              ...payload,
+            });
+>>>>>>> origin/main
 
           return updatedProduct;
         }

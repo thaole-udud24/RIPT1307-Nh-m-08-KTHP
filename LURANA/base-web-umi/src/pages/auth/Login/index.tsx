@@ -29,6 +29,7 @@ export default function LoginPage() {
 
     //  lưu token (sau này dùng thật)
 <<<<<<< HEAD
+<<<<<<< HEAD
     const token = res?.data?.access_token;
 
     if (!token) {
@@ -43,6 +44,8 @@ export default function LoginPage() {
     //  chuyển trang
     history.push('/');
 =======
+=======
+>>>>>>> origin/main
     const token = res?.data?.access_token || 'fake_token';
     // fake role
     let role = 'user'; 
@@ -76,7 +79,10 @@ export default function LoginPage() {
     } else {
       history.push('/');
     }
+<<<<<<< HEAD
 >>>>>>> 45b5da6cbee2c367b805619f9783ea6b8b97f000
+=======
+>>>>>>> origin/main
 
     return; 
   } catch (error) {
@@ -97,10 +103,14 @@ export default function LoginPage() {
             bằng sự dịu dàng.
           </p>
 <<<<<<< HEAD
+<<<<<<< HEAD
           <button>Mua ngay</button>
 =======
           <button onClick={() => history.push('/products')}>Mua ngay</button>
 >>>>>>> 45b5da6cbee2c367b805619f9783ea6b8b97f000
+=======
+          <button onClick={() => history.push('/products')}>Mua ngay</button>
+>>>>>>> origin/main
         </div>
       </div>
 
@@ -109,10 +119,14 @@ export default function LoginPage() {
         <div className="auth-form">
           <div className="auth-top">
 <<<<<<< HEAD
+<<<<<<< HEAD
             <button className="auth-back">← Trở lại</button>
 =======
             <button className="auth-back" onClick={() => history.push('/home')}>← Trở lại</button>
 >>>>>>> 45b5da6cbee2c367b805619f9783ea6b8b97f000
+=======
+            <button className="auth-back" onClick={() => history.push('/home')}>← Trở lại</button>
+>>>>>>> origin/main
           </div>
 
           <h2>Chào mừng trở lại</h2>
@@ -121,10 +135,14 @@ export default function LoginPage() {
           </p>
 
 <<<<<<< HEAD
+<<<<<<< HEAD
           <button className="auth-google">
 =======
           <button className="auth-google" onClick={() => message.info('Tính năng đăng nhập bằng Google đang được bảo trì...')}>
 >>>>>>> 45b5da6cbee2c367b805619f9783ea6b8b97f000
+=======
+          <button className="auth-google" onClick={() => message.info('Tính năng đăng nhập bằng Google đang được bảo trì...')}>
+>>>>>>> origin/main
             🔵 Sign up with Google
           </button>
 
@@ -141,9 +159,13 @@ export default function LoginPage() {
             value={password}
             onChange={(e) => setPassword(e.target.value)}
 <<<<<<< HEAD
+<<<<<<< HEAD
 =======
             onKeyDown={(e) => e.key === 'Enter' && handleLogin()}
 >>>>>>> 45b5da6cbee2c367b805619f9783ea6b8b97f000
+=======
+            onKeyDown={(e) => e.key === 'Enter' && handleLogin()}
+>>>>>>> origin/main
           />
 
           <div className="auth-forgot" onClick={() => history.push('/auth/forgot-password')}>Quên mật khẩu?</div>

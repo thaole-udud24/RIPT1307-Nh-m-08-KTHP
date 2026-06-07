@@ -1,7 +1,8 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { HydratedDocument, Types } from 'mongoose';
 
-export type EmailVerifyTokenDocument = HydratedDocument<EmailVerifyToken>;
+export type EmailVerifyTokenDocument =
+  HydratedDocument<EmailVerifyToken>;
 
 @Schema({
   timestamps: true,

@@ -1,3 +1,7 @@
+// 1. Nhập khẩu trực tiếp cấu hình variables.less của hệ thống
+@import '~@/styles/variables.less';
+
+// 2. Định nghĩa lại các biến màu sắc pastel đặc trưng của trang Home
 @primary-color: #e8a0a0;
 @primary-dark: #d4787a;
 @primary-rose: #c0606b;
@@ -8,663 +12,65 @@
 @glass-white: rgba(255, 255, 255, 0.72);
 @glass-border: rgba(255, 255, 255, 0.6);
 
-.home-container {
+// ========================================================
+// MASTER CONTAINER (HỆ THỐNG ĐIỀU PHỐI DÒNG CHẢY TRANG CHỦ)
+// ========================================================
+.home-page-master-container {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 90px; // Khoảng cách thở chuẩn xịn giữa các Section lớn
   padding: 0;
+  overflow-x: hidden; // Chặn hoàn toàn lỗi tràn viền ngang (Scroll ngang)
+  box-sizing: border-box;
+  background-color: #ffffff; // 🔥 Đã ép nền trắng sạch sẽ tại đây để lộ ảnh hero-bg.png
+
+  // Đảm bảo mọi khối nội dung render theo dạng khối tự nhiên (Block Flow)
+  & > section, 
+  & > div[class*="-container"] {
+    width: 100%;
+    position: relative;
+    box-sizing: border-box;
+    clear: both;
+  }
+}
+
+// ========================================================
+// GLOBAL REUSABLE LAYOUTS (Cấu trúc Layout dùng chung cho các trang)
+// ========================================================
+
+// Khung bao tiêu đề dùng chung cho các phần (Essence, Best Seller, Gallery...)
+.section-title-wrapper {
+  text-align: center;
+  margin-bottom: 50px;
+  width: 100%;
   
-  .hero-section {
-    position: relative;
-    padding: 90px 10%;
-    display: flex;
-    align-items: center;
-    background: transparent;
-    min-height: 82vh;
-    overflow: hidden;
-
-    .hero-content {
-      position: relative;
-      z-index: 2;
-      flex: 1;
-
-      .hero-badge {
-        font-family: 'Brush Script MT', cursive;
-        font-size: 3.2rem;
-        color: @primary-rose;
-        margin-bottom: -8px;
-        text-shadow: 0 2px 8px rgba(192, 96, 107, 0.2);
-      }
-
-      h1 {
-        font-size: 3.8rem;
-        color: @primary-rose;
-        margin-bottom: 20px;
-        font-weight: 800;
-        text-transform: uppercase;
-        letter-spacing: 2px;
-        text-shadow: 0 2px 12px rgba(192, 96, 107, 0.15);
-      }
-
-      p {
-        font-size: 1rem;
-        color: @text-light;
-        margin-bottom: 40px;
-        max-width: 480px;
-        line-height: 1.8;
-        background: @glass-white;
-        padding: 16px 20px;
-        border-radius: 12px;
-        backdrop-filter: blur(8px);
-        border: 1px solid @glass-border;
-      }
-
-      .shop-now-btn {
-        background: linear-gradient(135deg, #e8a0a0 0%, #c0606b 100%);
-        border: none;
-        height: 52px;
-        padding: 0 44px;
-        font-size: 1rem;
-        font-weight: 600;
-        border-radius: 26px;
-        color: #fff;
-        box-shadow: 0 6px 20px rgba(192, 96, 107, 0.35);
-        letter-spacing: 0.5px;
-        transition: all 0.3s ease;
-        &:hover {
-          background: linear-gradient(135deg, #d4787a 0%, #a04050 100%);
-          transform: translateY(-3px);
-          box-shadow: 0 10px 28px rgba(192, 96, 107, 0.45);
-        }
-      }
-    }
-
-    .hero-image {
-      position: relative;
-      z-index: 2;
-      flex: 1;
-      display: flex;
-      justify-content: center;
-
-      .img-circle {
-        width: 420px;
-        height: 420px;
-        border-radius: 50%;
-        border: 6px solid rgba(255, 255, 255, 0.85);
-        overflow: hidden;
-        box-shadow:
-          0 0 0 12px rgba(232, 160, 160, 0.25),
-          0 20px 60px rgba(192, 96, 107, 0.25);
-        transition: transform 0.4s ease, box-shadow 0.4s ease;
-        &:hover {
-          transform: scale(1.02);
-          box-shadow:
-            0 0 0 16px rgba(232, 160, 160, 0.2),
-            0 28px 70px rgba(192, 96, 107, 0.3);
-        }
-        img {
-          width: 100%;
-          height: 100%;
-          object-fit: cover;
-        }
-      }
-    }
+  h2 {
+    font-size: 2.2rem;
+    color: @text-color;
+    font-weight: 700;
+    display: inline-block;
+    border-bottom: 3px solid @primary-color;
+    padding-bottom: 12px;
+    margin: 0;
   }
+}
 
-  .about-section {
-    display: flex;
-    padding: 80px 10%;
-    align-items: stretch;
-    background: transparent;
+// Hệ thống lưới hiển thị danh sách sản phẩm (Sử dụng CSS Grid tối ưu responsive)
+.product-grid-layout {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 30px;
+  width: 100%;
+  padding: 0 10%;
+  box-sizing: border-box;
+}
 
-    .about-img {
-      flex: 1;
-      display: flex;
-      align-items: center;
-      img {
-        width: 100%;
-        max-width: 500px;
-        border-radius: 16px;
-        box-shadow: 0 16px 48px rgba(192, 96, 107, 0.18);
-        object-fit: cover;
-        height: 100%;
-        max-height: 500px;
-      }
-    }
-
-    .about-text-wrapper {
-      flex: 1;
-      position: relative;
-      min-height: 380px;
-
-      .about-text {
-        position: absolute;
-        top: 0;
-        left: -50px;
-        right: 0;
-        bottom: 0;
-        background: @glass-white;
-        backdrop-filter: blur(12px);
-        border: 1px solid @glass-border;
-        padding: 50px 40px;
-        border-radius: 20px;
-        z-index: 2;
-        box-shadow: 0 8px 32px rgba(192, 96, 107, 0.12);
-        overflow-y: auto;
-        display: flex;
-        flex-direction: column;
-        justify-content: flex-start;
-
-        &::-webkit-scrollbar {
-          width: 6px;
-        }
-        &::-webkit-scrollbar-track {
-          background: rgba(255, 245, 245, 0.5);
-          border-radius: 10px;
-          margin: 15px 0;
-        }
-        &::-webkit-scrollbar-thumb {
-          background: rgba(232, 160, 160, 0.6);
-          border-radius: 10px;
-          &:hover {
-            background: rgba(192, 96, 107, 0.8);
-          }
-        }
-
-        h2 {
-          font-size: 2rem;
-          color: @primary-rose;
-          margin-bottom: 20px;
-          font-weight: 700;
-          flex-shrink: 0;
-        }
-
-        p {
-          color: @text-light;
-          line-height: 1.8;
-          margin-bottom: 30px;
-          font-weight: 400;
-          flex-shrink: 0;
-        }
-
-        .expanded-content {
-          animation: fadeIn 0.4s ease-in-out;
-          flex-shrink: 0;
-          p {
-            margin-bottom: 25px;
-            &:last-child {
-              margin-bottom: 35px;
-            }
-          }
-        }
-
-        @keyframes fadeIn {
-          from {
-            opacity: 0;
-            transform: translateY(-10px);
-          }
-          to {
-            opacity: 1;
-            transform: translateY(0);
-          }
-        }
-
-        .read-more-btn {
-          background: linear-gradient(135deg, #e8a0a0 0%, #c0606b 100%);
-          color: #fff;
-          border: none;
-          border-radius: 20px;
-          height: 42px;
-          padding: 0 32px;
-          box-shadow: 0 4px 14px rgba(192, 96, 107, 0.3);
-          transition: all 0.3s ease;
-          align-self: flex-start;
-          flex-shrink: 0;
-          margin-top: auto;
-          &:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 8px 20px rgba(192, 96, 107, 0.4);
-          }
-        }
-      }
-    }
-  }
-
-  .section-title-wrapper {
-    text-align: center;
-    margin-bottom: 40px;
-    h2 {
-      font-size: 2.2rem;
-      color: @text-color;
-      font-weight: 700;
-      display: inline-block;
-      border-bottom: 3px solid @primary-color;
-      padding-bottom: 10px;
-    }
-  }
-
-  .essence-section {
-    padding: 60px 10%;
-    
-    .essence-card {
-      background: @glass-white;
-      backdrop-filter: blur(10px);
-      border: 1px solid @glass-border;
-      padding: 40px 20px;
-      border-radius: 18px;
-      text-align: center;
-      transition: all 0.35s ease;
-      box-shadow: 0 4px 16px rgba(192, 96, 107, 0.08);
-      
-      &:hover {
-        transform: translateY(-6px);
-        box-shadow: 0 12px 32px rgba(192, 96, 107, 0.18);
-      }
-
-      .icon-wrapper {
-        font-size: 3.5rem;
-        color: @primary-color;
-        margin-bottom: 15px;
-      }
-
-      h4 {
-        font-size: 1.1rem;
-        color: @text-color;
-        font-weight: 600;
-      }
-    }
-  }
-
-  .best-seller-section {
-    background: @glass-white;
-    backdrop-filter: blur(12px);
-    border: 1px solid @glass-border;
-    padding: 80px 10%;
-    border-radius: 30px;
-    margin: 40px 5%;
-    box-shadow: 0 8px 40px rgba(192, 96, 107, 0.1);
-
-    .view-more {
-      text-align: right;
-      margin-bottom: 20px;
-      a { color: @primary-rose; font-weight: 500; text-decoration: none;
-        &:hover { text-decoration: underline; }
-      }
-    }
-
-    .product-card {
-      background: rgba(255,255,255,0.9);
-      border-radius: 18px;
-      padding: 20px;
-      position: relative;
-      text-align: center;
-      transition: all 0.35s ease;
-      border: 1px solid rgba(232, 160, 160, 0.15);
-
-      &:hover {
-        transform: translateY(-5px);
-        box-shadow: 0 14px 32px rgba(192, 96, 107, 0.14);
-      }
-
-      .wishlist-icon {
-        position: absolute;
-        top: 20px;
-        left: 20px;
-        color: @primary-color;
-        font-size: 1.2rem;
-      }
-
-      .rating {
-        position: absolute;
-        top: 20px;
-        right: 20px;
-        color: #faad14;
-        font-size: 0.9rem;
-        display: flex;
-        align-items: center;
-        gap: 5px;
-      }
-
-      img {
-        width: 100%;
-        height: 180px;
-        object-fit: contain;
-        margin-bottom: 15px;
-      }
-
-      .product-name {
-        font-size: 0.95rem;
-        color: @text-color;
-        margin-bottom: 5px;
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
-      }
-
-      .product-price {
-        color: @primary-rose;
-        font-size: 0.9rem;
-        font-weight: 600;
-      }
-    }
-  }
-
-  .commitment-section {
-    padding: 80px 10%;
-
-    .commitment-grid {
-      display: flex;
-      align-items: center;
-      gap: 30px;
-
-      .commitment-col {
-        flex: 1;
-        display: flex;
-        flex-direction: column;
-        gap: 20px;
-
-        .commit-box {
-          background: @glass-white;
-          backdrop-filter: blur(10px);
-          border: 1px solid @glass-border;
-          padding: 20px;
-          border-radius: 14px;
-          display: flex;
-          align-items: center;
-          gap: 15px;
-          box-shadow: 0 4px 14px rgba(192, 96, 107, 0.08);
-          transition: all 0.3s ease;
-          &:hover {
-            box-shadow: 0 8px 24px rgba(192, 96, 107, 0.16);
-            transform: translateY(-2px);
-          }
-          
-          .commit-icon {
-            color: @primary-rose;
-            font-size: 1.5rem;
-          }
-          
-          .commit-text {
-            h5 { margin: 0 0 5px 0; font-size: 1rem; color: @text-color; }
-            p { margin: 0; font-size: 0.8rem; color: @text-light; }
-          }
-        }
-      }
-
-      .commitment-center-img {
-        flex: 1;
-        img {
-          width: 100%;
-          border-radius: 20px;
-          box-shadow: 0 16px 48px rgba(192, 96, 107, 0.18);
-        }
-      }
-    }
-  }
-
-  .stats-section {
-    padding: 60px 10%;
-    
-    .stats-container {
-      display: flex;
-      align-items: center;
-      gap: 50px;
-
-      .stats-text {
-        flex: 1;
-        h3 { font-size: 2rem; color: @text-color; margin-bottom: 20px; text-transform: uppercase; letter-spacing: 1px; }
-        p { color: @text-light; line-height: 1.6; }
-      }
-
-      .stats-grid {
-        flex: 1;
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-        gap: 40px;
-
-        .stat-item {
-          h4 { font-size: 2.5rem; color: @primary-rose; margin-bottom: 5px; font-weight: 800; }
-          p { color: @text-light; font-size: 0.9rem; }
-        }
-      }
-    }
-  }
-
-  .quote-section {
-    padding: 100px 10%;
-    text-align: center;
-    position: relative;
-    
-    &::before {
-      content: '';
-      position: absolute;
-      top: 0; left: 0; right: 0; bottom: 0;
-      background: linear-gradient(135deg, rgba(255,230,230,0.82) 0%, rgba(255,210,210,0.75) 100%);
-      backdrop-filter: blur(4px);
-    }
-
-    .quote-content {
-      position: relative;
-      z-index: 2;
-      max-width: 800px;
-      margin: 0 auto;
-
-      p {
-        font-size: 1.5rem;
-        color: @primary-rose;
-        font-weight: 600;
-        line-height: 1.7;
-        margin-bottom: 30px;
-        font-style: italic;
-      }
-      .author {
-        font-size: 1.1rem;
-        color: @primary-rose;
-        font-weight: 700;
-        letter-spacing: 1px;
-      }
-    }
-  }
-
-  .steps-section {
-    padding: 80px 10%;
-    text-align: center;
-
-    .step-item {
-      .step-badge {
-        background: @secondary-color;
-        color: @primary-color;
-        padding: 5px 20px;
-        border-radius: 20px;
-        display: inline-block;
-        margin-bottom: 20px;
-        font-weight: 600;
-      }
-      .step-icon {
-        font-size: 3rem;
-        color: @text-color;
-        margin-bottom: 15px;
-      }
-      h5 { font-size: 1.1rem; color: @text-color; margin-bottom: 10px; }
-      p { font-size: 0.85rem; color: #666; }
-    }
-  }
-
-  .gallery-section {
-    padding: 60px 10% 100px 10%;
-    background: transparent;
-
-    .section-title-wrapper {
-      text-align: center;
-      margin-bottom: 60px;
-      h2 {
-        font-size: 2.2rem;
-        color: @text-color;
-        font-weight: 700;
-        display: inline-block;
-        border-bottom: 3px solid @primary-color;
-        padding-bottom: 10px;
-      }
-    }
-
-    .gallery-container {
-      display: grid;
-      grid-template-columns: 1.4fr 1fr 1fr;
-      gap: 30px;
-      align-items: start;
-      max-width: 1200px;
-      margin: 0 auto;
-
-      .gallery-col {
-        display: flex;
-        flex-direction: column;
-        gap: 30px;
-
-        &.col-large {
-          margin-top: 0;
-        }
-
-        &.col-middle {
-          margin-top: 45px;
-        }
-
-        &.col-right {
-          margin-top: 0;
-        }
-      }
-
-      .gallery-item {
-        overflow: hidden;
-        position: relative;
-
-        img {
-          width: 100%;
-          height: auto;
-          display: block;
-          object-fit: contain;
-          transition: transform 0.5s ease;
-
-          &:hover {
-            transform: scale(1.03);
-          }
-        }
-      }
-    }
-  }
-
-  .contact-section {
-    padding: 100px 10%;
-    position: relative;
-    background: transparent;
-
-    .contact-container {
-      display: flex;
-      align-items: center;
-      justify-content: flex-start;
-      position: relative;
-      max-width: 1200px;
-      margin: 0 auto;
-      min-height: 540px;
-
-      .contact-image {
-        position: absolute;
-        right: 0;
-        top: 0;
-        bottom: 0;
-        width: 68%;
-        border-radius: 28px;
-        overflow: hidden;
-        box-shadow: 0 16px 48px rgba(192, 96, 107, 0.15);
-        z-index: 1;
-
-        img {
-          width: 100%;
-          height: 100%;
-          object-fit: cover;
-          transition: transform 0.8s ease;
-
-          &:hover {
-            transform: scale(1.03);
-          }
-        }
-      }
-
-      .contact-form {
-        position: relative;
-        z-index: 2;
-        width: 460px;
-        background: rgba(255, 255, 255, 0.88);
-        backdrop-filter: blur(24px);
-        border: 1px solid rgba(255, 255, 255, 0.8);
-        padding: 50px 45px;
-        border-radius: 28px;
-        box-shadow: 0 20px 60px rgba(192, 96, 107, 0.22);
-        margin-left: 20px;
-
-        .form-title {
-          font-family: 'Brush Script MT', cursive;
-          font-size: 2.5rem;
-          color: @primary-rose;
-          text-align: center;
-          margin-bottom: -5px;
-          text-shadow: 0 2px 8px rgba(192, 96, 107, 0.15);
-        }
-
-        h3 {
-          text-align: center;
-          margin-bottom: 35px;
-          color: @text-color;
-          font-size: 1.5rem;
-          font-weight: 700;
-          letter-spacing: 0.5px;
-        }
-
-        .ant-form-item {
-          margin-bottom: 22px;
-
-          .ant-form-item-label > label {
-            font-weight: 600;
-            color: @text-light;
-            font-size: 0.95rem;
-            padding-bottom: 4px;
-          }
-        }
-
-        .custom-input {
-          background: transparent;
-          border-bottom: 2px solid rgba(232, 160, 160, 0.4);
-          padding: 8px 0;
-          font-size: 1rem;
-          color: @text-color;
-          transition: all 0.3s ease;
-
-          &:focus, &:hover {
-            border-bottom: 2px solid @primary-rose;
-            box-shadow: 0 2px 0 0 rgba(192, 96, 107, 0.1);
-          }
-
-          &::placeholder {
-            color: rgba(122, 92, 90, 0.45);
-          }
-        }
-
-        .submit-btn {
-          width: 100%;
-          background: linear-gradient(135deg, #e8a0a0 0%, #c0606b 100%);
-          border: none;
-          height: 50px;
-          border-radius: 25px;
-          font-size: 1.05rem;
-          font-weight: 600;
-          color: #fff;
-          box-shadow: 0 6px 20px rgba(192, 96, 107, 0.3);
-          transition: all 0.3s ease;
-          margin-top: 15px;
-
-          &:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 10px 28px rgba(192, 96, 107, 0.45);
-            background: linear-gradient(135deg, #d4787a 0%, #a04050 100%);
-          }
-        }
-      }
-    }
-  }
+// Cấu trúc kính mờ hệ thống (Glassmorphism Reusable)
+.glass-panel-base {
+  background: @glass-white;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid @glass-border;
+  box-shadow: 0 8px 32px rgba(192, 96, 107, 0.1);
 }

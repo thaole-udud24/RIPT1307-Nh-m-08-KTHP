@@ -57,10 +57,14 @@ export default function RegisterPage() {
               bằng sự dịu dàng.
             </p>
 <<<<<<< HEAD
+<<<<<<< HEAD
             <button>Mua ngay</button>
 =======
             <button onClick={() => history.push('/products')}>Mua ngay</button>
 >>>>>>> 45b5da6cbee2c367b805619f9783ea6b8b97f000
+=======
+            <button onClick={() => history.push('/products')}>Mua ngay</button>
+>>>>>>> origin/main
           </div>
         </div>
 
@@ -71,10 +75,14 @@ export default function RegisterPage() {
             <button
               className="auth-back"
 <<<<<<< HEAD
+<<<<<<< HEAD
               onClick={() => history.push('/auth/login')}
 =======
               onClick={() => history.push('/home')}
 >>>>>>> 45b5da6cbee2c367b805619f9783ea6b8b97f000
+=======
+              onClick={() => history.push('/home')}
+>>>>>>> origin/main
             >
               ← Trở lại
             </button>
@@ -85,10 +93,14 @@ export default function RegisterPage() {
             </p>
 
 <<<<<<< HEAD
+<<<<<<< HEAD
             <button className="auth-google">
 =======
             <button className="auth-google" onClick={() => message.info('Tính năng đăng ký bằng Google đang được bảo trì...')}>
 >>>>>>> 45b5da6cbee2c367b805619f9783ea6b8b97f000
+=======
+            <button className="auth-google" onClick={() => message.info('Tính năng đăng ký bằng Google đang được bảo trì...')}>
+>>>>>>> origin/main
               🔵 Sign up with Google
             </button>
 
@@ -115,9 +127,13 @@ export default function RegisterPage() {
               value={form.password}
               onChange={handleChange}
 <<<<<<< HEAD
+<<<<<<< HEAD
 =======
               onKeyDown={(e) => e.key === 'Enter' && handleRegister()}
 >>>>>>> 45b5da6cbee2c367b805619f9783ea6b8b97f000
+=======
+              onKeyDown={(e) => e.key === 'Enter' && handleRegister()}
+>>>>>>> origin/main
             />
 
             <button
