@@ -1,5 +1,6 @@
 import { Injectable, BadRequestException } from '@nestjs/common';
-import * as ExcelJS from 'exceljs';
+
+const ExcelJS: any = require('exceljs');
 
 @Injectable()
 export class ExcelBaseService {

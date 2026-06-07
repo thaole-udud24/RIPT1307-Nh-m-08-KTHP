@@ -1,8 +1,8 @@
 import { Controller, Get, Post, Body, Query, UseInterceptors, UploadedFile, Res } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import type { Response } from 'express';
+import type { File } from 'multer';
 import { SkinTypesService } from './skin-types.service';
-import 'multer';
 @Controller('admin/skin-types')
 export class SkinTypesAdminController {
   constructor(private readonly skinTypesService: SkinTypesService) {}
@@ -23,7 +23,7 @@ export class SkinTypesAdminController {
 
   @Post('import/preview')
   @UseInterceptors(FileInterceptor('file'))
-  async preview(@UploadedFile() file: Express.Multer.File, @Body('mapping') mappingStr: string) {
+  async preview(@UploadedFile() file: File, @Body('mapping') mappingStr: string) {
     const mapping = JSON.parse(mappingStr);
     return this.skinTypesService.previewImportData(file.buffer, mapping);
   }

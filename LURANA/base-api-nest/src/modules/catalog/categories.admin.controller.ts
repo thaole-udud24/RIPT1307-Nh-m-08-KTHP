@@ -21,7 +21,7 @@ export class CategoriesAdminController {
   }
   @Post('import/preview')
   @UseInterceptors(FileInterceptor('file'))
-  async preview(@UploadedFile() file: Express.Multer.File, @Body('mapping') mappingStr: string) {
+  async preview(@UploadedFile() file: any, @Body('mapping') mappingStr: string) {
     const mapping = JSON.parse(mappingStr);
     return this.categoriesService.previewImportData(file.buffer, mapping);
   }
