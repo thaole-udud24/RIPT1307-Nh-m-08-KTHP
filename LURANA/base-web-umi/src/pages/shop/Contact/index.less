@@ -254,9 +254,30 @@
 
 @media (max-width: 768px) {
   .contact-page-container {
-    .section-hero .hero-title { font-size: 2.5rem; }
+    .section-hero {
+      padding: 48px 20px;
+
+      .hero-title { font-size: 2.5rem; }
+    }
+
     .section-industry .concern-card-item { padding: 30px 24px; }
     .extended-grid .ant-col { width: 100% !important; max-width: 100% !important; }
     .decor-item { display: none !important; }
+  }
+}
+
+@media (max-width: 576px) {
+  .contact-page-container {
+    .section-hero .hero-title { font-size: 2rem; }
+
+    .section-industry .concern-card-item {
+      padding: 24px 18px;
+    }
+
+    .contact-form-section,
+    .contact-info-section {
+      padding-left: 16px;
+      padding-right: 16px;
+    }
   }
 }

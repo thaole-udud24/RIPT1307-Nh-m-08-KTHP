@@ -1,5 +1,39 @@
 import request from '@/services/base/request';
 
+export type AppLocale = 'vi-VN' | 'en-US';
+
+export interface NotificationPrefs {
+  emailAlerts: boolean;
+  pushAlerts: boolean;
+  newOrderAlerts: boolean;
+  cancelOrderAlerts: boolean;
+}
+
+export interface RegionalPrefs {
+  timezone: string;
+  dateFormat: string;
+  currency: string;
+}
+
+export interface UserPreferences {
+  locale: AppLocale;
+  notification_prefs: NotificationPrefs;
+  regional_prefs: RegionalPrefs;
+}
+
+export const DEFAULT_NOTIFICATION_PREFS: NotificationPrefs = {
+  emailAlerts: true,
+  pushAlerts: true,
+  newOrderAlerts: true,
+  cancelOrderAlerts: true,
+};
+
+export const DEFAULT_REGIONAL_PREFS: RegionalPrefs = {
+  timezone: 'gmt7',
+  dateFormat: 'dmy',
+  currency: 'vnd',
+};
+
 // =========================================================
 // API DÀNH CHO KHÁCH HÀNG (END-USER)
 // =========================================================
@@ -16,10 +50,47 @@ export async function getMe() {
 /**
  * Cập nhật thông tin cơ bản của hồ sơ (Họ tên, giới tính, ảnh đại diện)
  */
-export async function updateProfile(data: { full_name?: string; gender?: string; avatar_url?: string }) {
-  return request('/api/users/me', { 
-    method: 'PUT', 
-    data 
+export async function updateProfile(data: {
+  full_name?: string;
+  gender?: string;
+  avatar_url?: string;
+  banner_url?: string;
+  bio?: string;
+  phone?: string;
+  date_of_birth?: string;
+}) {
+  return request('/api/users/profile', {
+    method: 'PATCH',
+    data,
+  });
+}
+
+export async function uploadAvatar(file: File) {
+  const formData = new FormData();
+  formData.append('file', file);
+  return request('/api/users/avatar', {
+    method: 'POST',
+    data: formData,
+    requestType: 'form',
+  });
+}
+
+export async function saveVoucherToWallet(data: {
+  code: string;
+  name?: string;
+  discount_amount?: number;
+  expires_at?: string;
+  min_order?: number;
+}) {
+  return request('/api/users/me/vouchers', {
+    method: 'POST',
+    data,
+  });
+}
+
+export async function removeVoucherFromWallet(code: string) {
+  return request(`/api/users/me/vouchers/${encodeURIComponent(code)}`, {
+    method: 'DELETE',
   });
 }
 
@@ -83,14 +154,25 @@ export async function removePhone(phoneId: string) {
 /**
  * Thêm một địa chỉ nhận hàng mới
  */
-export async function addAddress(data: {
+export interface AddressPayload {
   label?: string;
-  address_line?: string;
-  province?: string;
-  district?: string;
-  ward?: string;
+  receiver_name: string;
+  receiver_phone_e164: string;
+  country_id: string;
+  country_name: string;
+  province_id: string;
+  province_name: string;
+  district_id: string;
+  district_name: string;
+  ward_id: string;
+  ward_name: string;
+  address_line: string;
+  postal_code?: string;
+  delivery_note?: string;
   is_default?: boolean;
-}) {
+}
+
+export async function addAddress(data: AddressPayload) {
   return request('/api/users/addresses', {
     method: 'POST',
     data,
@@ -102,14 +184,7 @@ export async function addAddress(data: {
  */
 export async function updateAddress(
   addressId: string,
-  data: {
-    label?: string;
-    address_line?: string;
-    province?: string;
-    district?: string;
-    ward?: string;
-    is_default?: boolean;
-  },
+  data: Partial<AddressPayload>,
 ) {
   return request(`/api/users/addresses/${addressId}`, {
     method: 'PATCH',
@@ -143,7 +218,28 @@ export async function removeAddress(addressId: string) {
 /**
  * 1. Lấy danh sách khách hàng (Có phân trang, bộ lọc tìm kiếm)
  */
-export async function getAdminUsers(params: { page: number; limit: number; search?: string }) {
+export interface AdminUserListParams {
+  page: number;
+  limit: number;
+  search?: string;
+  status?: 'active' | 'blocked';
+  verified?: 'true' | 'false';
+  vip?: 'true';
+}
+
+export interface AdminUserListItem {
+  _id: string;
+  email: string;
+  name: string;
+  avatar?: string | null;
+  isEmailVerified: boolean;
+  status?: 'active' | 'blocked';
+  createdAt?: string;
+  totalOrders: number;
+  totalSpent: number;
+}
+
+export async function getAdminUsers(params: AdminUserListParams) {
   return request('/api/admin/users', {
     method: 'GET',
     params,
@@ -162,10 +258,44 @@ export async function getAdminUserDetail(userId: string) {
 /**
  * 3. Xuất file Excel danh sách khách hàng từ hệ thống
  */
-export async function exportUsersAdmin(params?: { search?: string; exportOptions?: string }) {
+export async function exportUsersAdmin(params?: {
+  search?: string;
+  exportOptions?: string;
+  status?: string;
+  verified?: string;
+  vip?: string;
+}) {
   return request('/api/admin/users/export', {
     method: 'GET',
     params,
     responseType: 'blob', // Định dạng bắt buộc để xử lý tải xuống file nhị phân (Excel)
   });
+}
+
+export async function getAdminUserStats() {
+  return request('/api/admin/users/stats', { method: 'GET' });
+}
+
+export async function updateAdminUserStatus(userId: string, status: 'active' | 'blocked') {
+  return request(`/api/admin/users/${userId}/status`, {
+    method: 'PATCH',
+    data: { status },
+  });
+}
+
+export async function getPreferences() {
+  return request('/api/users/me/preferences', { method: 'GET' }) as Promise<{
+    success: boolean;
+    data: UserPreferences;
+  }>;
+}
+
+export async function updatePreferences(data: Partial<UserPreferences> & {
+  notification_prefs?: Partial<NotificationPrefs>;
+  regional_prefs?: Partial<RegionalPrefs>;
+}) {
+  return request('/api/users/me/preferences', {
+    method: 'PATCH',
+    data,
+  }) as Promise<{ success: boolean; data: UserPreferences }>;
 }

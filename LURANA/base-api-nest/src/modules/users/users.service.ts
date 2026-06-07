@@ -10,6 +10,8 @@ import { AddPhoneDto } from './dto/add-phone.dto';
 import { UpdatePhoneDto } from './dto/update-phone.dto';
 import { AddAddressDto } from './dto/add-address.dto';
 import { UpdateAddressDto } from './dto/update-address.dto';
+import { UpdatePreferencesDto } from './dto/update-preferences.dto';
+import { SaveVoucherDto } from './dto/save-voucher.dto';
 import { UserProfile, UserProfileDocument } from './schemas/user-profile.schema';
 import { UserPhone, UserPhoneDocument } from './schemas/user-phone.schema';
 import { UserAddress, UserAddressDocument } from './schemas/user-address.schema';
@@ -46,9 +48,14 @@ export class UsersService {
     return new Types.ObjectId(id);
   }
 
+  /** Địa chỉ chưa xóa mềm — schema default deleted_at: null nên phải dùng null, không dùng $exists: false */
+  private activeAddressFilter(userId: Types.ObjectId, extra: Record<string, unknown> = {}) {
+    return { user_id: userId, deleted_at: null, ...extra };
+  }
+
   // ================= PROFILE (LẤY & CẬP NHẬT THÔNG TIN CÁ NHÂN) =================
   
-  // ✅ FIX: HÀM NÀY SẼ LẤY FULL DATA TỪ 4 BẢNG ĐỂ FRONTEND HIỂN THỊ ĐỦ EMAIL, ROLE, NGÀY TẠO
+  /** Load account, profile, phones, and addresses for the current user. */
   async getMe(userId: string) {
     const objectId = this.toObjectId(userId);
     
@@ -56,12 +63,20 @@ export class UsersService {
       this.userModel.findById(objectId).select('-password').exec(), // Lấy tài khoản gốc (Email, Role, CreatedAt)
       this.userProfileModel.findOne({ user_id: objectId }).exec(),   // Lấy Bio, Avatar, Banner
       this.userPhoneModel.find({ user_id: objectId, status: 'active' }).exec(),
-      this.userAddressModel.find({ user_id: objectId, status: 'active', deleted_at: { $exists: false } }).exec(),
+      this.userAddressModel
+        .find(this.activeAddressFilter(objectId, { status: 'active' }))
+        .exec(),
     ]);
 
     if (!user) throw new NotFoundException('Không tìm thấy tài khoản người dùng');
 
-    return { account: user, profile, phones, addresses };
+    return {
+      account: user,
+      profile,
+      phones,
+      addresses,
+      savedVouchers: profile?.saved_vouchers || [],
+    };
   }
 
   async updateProfile(userId: string, dto: any) {
@@ -73,34 +88,119 @@ export class UsersService {
     if (dto.avatar_url !== undefined) payload.avatar_url = dto.avatar_url;
     if (dto.banner_url !== undefined) payload.banner_url = dto.banner_url; 
     if (dto.bio !== undefined) payload.bio = dto.bio; 
-    if (dto.phone !== undefined) payload.phone = dto.phone; 
+    if (dto.phone !== undefined) payload.phone = dto.phone;
+    if (dto.date_of_birth !== undefined) {
+      payload.date_of_birth = dto.date_of_birth ? new Date(dto.date_of_birth) : undefined;
+    }
 
     return this.userProfileModel
       .findOneAndUpdate({ user_id: objectId }, { $set: payload }, { new: true, upsert: true })
       .exec();
   }
 
-  // ================= ADMIN: QUẢN LÝ KHÁCH HÀNG =================
+  private defaultNotificationPrefs() {
+    return {
+      emailAlerts: true,
+      pushAlerts: true,
+      newOrderAlerts: true,
+      cancelOrderAlerts: true,
+    };
+  }
 
-  async findAllForAdmin(page: number = 1, limit: number = 10, search: string = '') {
-    const userProfilesCol = this.userProfileModel.collection.name; 
-    const ordersCol = this.orderModel.collection.name;            
+  private defaultRegionalPrefs() {
+    return { timezone: 'gmt7', dateFormat: 'dmy', currency: 'vnd' };
+  }
 
-    const skip = (page - 1) * limit;
+  private normalizePreferences(profile: UserProfileDocument | null) {
+    return {
+      locale: profile?.locale || 'vi-VN',
+      notification_prefs: {
+        ...this.defaultNotificationPrefs(),
+        ...(profile?.notification_prefs || {}),
+      },
+      regional_prefs: {
+        ...this.defaultRegionalPrefs(),
+        ...(profile?.regional_prefs || {}),
+      },
+    };
+  }
 
-    const matchStage: any = {
-      roles: { $in: ['USER'] },
+  async getPreferences(userId: string) {
+    const objectId = this.toObjectId(userId);
+    const profile = await this.userProfileModel.findOne({ user_id: objectId }).exec();
+    return this.normalizePreferences(profile);
+  }
+
+  async updatePreferences(userId: string, dto: UpdatePreferencesDto) {
+    const objectId = this.toObjectId(userId);
+    const existing = await this.userProfileModel.findOne({ user_id: objectId }).exec();
+    const current = this.normalizePreferences(existing);
+
+    const payload: Partial<UserProfile> = {
+      locale: dto.locale ?? current.locale,
+      notification_prefs: {
+        ...current.notification_prefs,
+        ...(dto.notification_prefs || {}),
+      },
+      regional_prefs: {
+        ...current.regional_prefs,
+        ...(dto.regional_prefs || {}),
+      },
     };
 
-    if (search) {
-      matchStage.$or = [
-        { email: { $regex: search, $options: 'i' } },
-        { name: { $regex: search, $options: 'i' } },
-      ];
-    }
+    const profile = await this.userProfileModel
+      .findOneAndUpdate({ user_id: objectId }, { $set: payload }, { new: true, upsert: true })
+      .exec();
 
-    const users = await this.userModel.aggregate([
-      { $match: matchStage },
+    return this.normalizePreferences(profile);
+  }
+
+  async findAdminUserIdsForNotification(
+    prefKey: 'newOrderAlerts' | 'cancelOrderAlerts',
+  ): Promise<string[]> {
+    const admins = await this.userModel
+      .find({ roles: { $in: ['ADMIN'] }, status: { $ne: 'blocked' } })
+      .select('_id')
+      .lean()
+      .exec();
+
+    if (!admins.length) return [];
+
+    const adminIds = admins.map((a) => a._id);
+    const profiles = await this.userProfileModel
+      .find({ user_id: { $in: adminIds } })
+      .lean()
+      .exec();
+
+    const profileMap = new Map(profiles.map((p) => [p.user_id.toString(), p]));
+
+    return admins
+      .filter((admin) => {
+        const profile = profileMap.get(admin._id.toString()) ?? null;
+        const prefs = this.normalizePreferences(profile as UserProfileDocument | null);
+        return prefs.notification_prefs[prefKey] !== false;
+      })
+      .map((admin) => admin._id.toString());
+  }
+
+  // ================= ADMIN: QUẢN LÝ KHÁCH HÀNG =================
+
+  private static readonly VIP_SPENT_THRESHOLD = 5_000_000;
+
+  private buildAdminUserListStages(filters: {
+    search?: string;
+    status?: 'active' | 'blocked';
+    verified?: 'true' | 'false';
+    vip?: 'true';
+  }) {
+    const userProfilesCol = this.userProfileModel.collection.name;
+    const ordersCol = this.orderModel.collection.name;
+
+    const baseMatch: any = { roles: { $in: ['USER'] } };
+    if (filters.status) baseMatch.status = filters.status;
+
+    const stages: any[] = [
+      { $match: baseMatch },
       {
         $lookup: {
           from: userProfilesCol,
@@ -137,25 +237,64 @@ export class UsersService {
         },
       },
       { $unwind: { path: '$orderStats', preserveNullAndEmptyArrays: true } },
+    ];
 
-      {
-        $project: {
-          _id: 1,
-          email: 1,
-          name: { $ifNull: ['$profile.full_name', '$name'] },
-          avatar: { $ifNull: ['$profile.avatar_url', null] },
-          isEmailVerified: 1,
-          createdAt: 1,
-          totalOrders: { $ifNull: ['$orderStats.totalOrders', 0] },
-          totalSpent: { $ifNull: ['$orderStats.totalSpent', 0] },
-        },
+    const andConditions: any[] = [];
+    if (filters.search?.trim()) {
+      const regex = { $regex: filters.search.trim(), $options: 'i' };
+      andConditions.push({
+        $or: [
+          { email: regex },
+          { name: regex },
+          { 'profile.full_name': regex },
+        ],
+      });
+    }
+    if (filters.verified === 'true') andConditions.push({ isEmailVerified: true });
+    if (filters.verified === 'false') andConditions.push({ isEmailVerified: false });
+    if (andConditions.length === 1) stages.push({ $match: andConditions[0] });
+    else if (andConditions.length > 1) stages.push({ $match: { $and: andConditions } });
+
+    stages.push({
+      $project: {
+        _id: 1,
+        email: 1,
+        name: { $ifNull: ['$profile.full_name', '$name'] },
+        avatar: { $ifNull: ['$profile.avatar_url', null] },
+        isEmailVerified: 1,
+        status: { $ifNull: ['$status', 'active'] },
+        createdAt: 1,
+        totalOrders: { $ifNull: ['$orderStats.totalOrders', 0] },
+        totalSpent: { $ifNull: ['$orderStats.totalSpent', 0] },
       },
-      { $sort: { _id: -1 } },
-      { $skip: skip },
-      { $limit: limit },
-    ]).option({ allowDiskUse: true });
+    });
 
-    const total = await this.userModel.countDocuments(matchStage);
+    if (filters.vip === 'true') {
+      stages.push({
+        $match: { totalSpent: { $gte: UsersService.VIP_SPENT_THRESHOLD } },
+      });
+    }
+
+    return stages;
+  }
+
+  async findAllForAdmin(
+    page: number = 1,
+    limit: number = 10,
+    search: string = '',
+    filters: { status?: 'active' | 'blocked'; verified?: 'true' | 'false'; vip?: 'true' } = {},
+  ) {
+    const skip = (page - 1) * limit;
+    const baseStages = this.buildAdminUserListStages({ search, ...filters });
+
+    const [users, countResult] = await Promise.all([
+      this.userModel
+        .aggregate([...baseStages, { $sort: { _id: -1 } }, { $skip: skip }, { $limit: limit }])
+        .option({ allowDiskUse: true }),
+      this.userModel.aggregate([...baseStages, { $count: 'total' }]).option({ allowDiskUse: true }),
+    ]);
+
+    const total = countResult[0]?.total ?? 0;
 
     return {
       data: users,
@@ -163,36 +302,18 @@ export class UsersService {
         total,
         page,
         limit,
-        totalPages: Math.ceil(total / limit),
+        totalPages: Math.ceil(total / limit) || 0,
       },
     };
   }
 
-  // ✅ XUẤT EXCEL CHO ADMIN
-  async exportForAdmin(search: string = '', exportOptions?: string): Promise<Buffer> {
+  async getStatsForAdmin() {
     const matchStage: any = { roles: { $in: ['USER'] } };
-    
-    if (search) {
-      matchStage.$or = [
-        { email: { $regex: search, $options: 'i' } },
-        { name: { $regex: search, $options: 'i' } },
-      ];
-    }
-
-    const userProfilesCol = this.userProfileModel.collection.name;
+    const totalCustomers = await this.userModel.countDocuments(matchStage);
     const ordersCol = this.orderModel.collection.name;
 
-    const users = await this.userModel.aggregate([
+    const userStats = await this.userModel.aggregate([
       { $match: matchStage },
-      {
-        $lookup: {
-          from: userProfilesCol,
-          localField: '_id',
-          foreignField: 'user_id',
-          as: 'profile',
-        },
-      },
-      { $unwind: { path: '$profile', preserveNullAndEmptyArrays: true } },
       {
         $lookup: {
           from: ordersCol,
@@ -208,13 +329,7 @@ export class UsersService {
                 },
               },
             },
-            {
-              $group: {
-                _id: null,
-                totalOrders: { $sum: 1 },
-                totalSpent: { $sum: '$totalAmount' },
-              },
-            },
+            { $group: { _id: null, totalSpent: { $sum: '$totalAmount' } } },
           ],
           as: 'orderStats',
         },
@@ -222,22 +337,49 @@ export class UsersService {
       { $unwind: { path: '$orderStats', preserveNullAndEmptyArrays: true } },
       {
         $project: {
-          _id: 1,
-          email: 1,
-          name: { $ifNull: ['$profile.full_name', '$name'] },
-          isEmailVerified: 1,
-          createdAt: 1,
-          totalOrders: { $ifNull: ['$orderStats.totalOrders', 0] },
           totalSpent: { $ifNull: ['$orderStats.totalSpent', 0] },
         },
       },
-      { $sort: { _id: -1 } },
     ]).option({ allowDiskUse: true });
+
+    const totalRevenue = userStats.reduce((sum, u) => sum + (u.totalSpent || 0), 0);
+    const vipCount = userStats.filter((u) => (u.totalSpent || 0) >= UsersService.VIP_SPENT_THRESHOLD).length;
+
+    return { totalCustomers, totalRevenue, vipCount };
+  }
+
+  async updateUserStatus(userId: string, status: 'active' | 'blocked') {
+    const objectId = this.toObjectId(userId);
+    const user = await this.userModel.findById(objectId).exec();
+    if (!user) {
+      throw new NotFoundException('Không tìm thấy khách hàng');
+    }
+    if (user.roles?.includes('ADMIN')) {
+      throw new BadRequestException('Không thể khóa tài khoản quản trị');
+    }
+    user.status = status;
+    await user.save();
+    return { id: user._id, status: user.status };
+  }
+
+  /** Export customer list to Excel for admin. */
+  async exportForAdmin(
+    search: string = '',
+    exportOptions?: string,
+    filters: { status?: 'active' | 'blocked'; verified?: 'true' | 'false'; vip?: 'true' } = {},
+  ): Promise<Buffer> {
+    const users = await this.userModel
+      .aggregate([
+        ...this.buildAdminUserListStages({ search, ...filters }),
+        { $sort: { _id: -1 } },
+      ])
+      .option({ allowDiskUse: true });
 
     const allFieldsMap: Record<string, (item: any) => any> = {
       email:           (u) => u.email || 'N/A',
       name:            (u) => u.name || '—',
       isEmailVerified: (u) => (u.isEmailVerified ? 'Đã xác thực' : 'Chưa xác thực'),
+      status:          (u) => (u.status === 'blocked' ? 'Đã khóa' : 'Hoạt động'),
       createdAt:       (u) => u.createdAt ? new Date(u.createdAt).toLocaleDateString('vi-VN') : '—',
       totalOrders:     (u) => u.totalOrders,
       totalSpent:      (u) => u.totalSpent,
@@ -304,6 +446,7 @@ export class UsersService {
         id: user._id,
         email: user.email,
         roles: user.roles,
+        status: (user as any).status || 'active',
         isEmailVerified: user.isEmailVerified,
         createdAt: (user as any).createdAt,
       },
@@ -415,10 +558,7 @@ export class UsersService {
     const objectId = this.toObjectId(userId);
     if (dto.is_default === true) {
       await this.userAddressModel
-        .updateMany(
-          { user_id: objectId, deleted_at: { $exists: false } },
-          { $set: { is_default: false } },
-        )
+        .updateMany(this.activeAddressFilter(objectId), { $set: { is_default: false } })
         .exec();
     }
     const address = await this.userAddressModel.create({
@@ -437,15 +577,13 @@ export class UsersService {
   async updateAddress(userId: string, addressId: string, dto: UpdateAddressDto) {
     const objectId = this.toObjectId(userId);
     const addressObjectId = this.toObjectId(addressId);
-    const address = await this.userAddressModel.findOne({
-      _id: addressObjectId,
-      user_id: objectId,
-      deleted_at: null,
-    });
+    const address = await this.userAddressModel.findOne(
+      this.activeAddressFilter(objectId, { _id: addressObjectId }),
+    );
     if (!address) throw new NotFoundException('Không tìm thấy address');
     if (dto.is_default === true) {
       await this.userAddressModel.updateMany(
-        { user_id: objectId, deleted_at: null },
+        this.activeAddressFilter(objectId),
         { $set: { is_default: false } },
       );
     }
@@ -469,15 +607,13 @@ export class UsersService {
   async setDefaultAddress(userId: string, addressId: string) {
     const objectId = this.toObjectId(userId);
     const addressObjectId = this.toObjectId(addressId);
-    const address = await this.userAddressModel.findOne({
-      _id: addressObjectId,
-      user_id: objectId,
-      deleted_at: null,
-    });
+    const address = await this.userAddressModel.findOne(
+      this.activeAddressFilter(objectId, { _id: addressObjectId }),
+    );
     if (!address) throw new NotFoundException('Không tìm thấy address');
     if (address.is_default) return address;
     await this.userAddressModel.updateMany(
-      { user_id: objectId, deleted_at: null },
+      this.activeAddressFilter(objectId),
       { $set: { is_default: false } },
     );
     address.is_default = true;
@@ -493,7 +629,7 @@ export class UsersService {
     const objectId = this.toObjectId(userId);
     const addressObjectId = this.toObjectId(addressId);
     const address = await this.userAddressModel
-      .findOne({ _id: addressObjectId, user_id: objectId, deleted_at: { $exists: false } })
+      .findOne(this.activeAddressFilter(objectId, { _id: addressObjectId }))
       .exec();
     if (!address) throw new NotFoundException('Không tìm thấy address');
     await this.userAddressModel
@@ -503,7 +639,7 @@ export class UsersService {
       )
       .exec();
     const remaining = await this.userAddressModel
-      .find({ user_id: objectId, status: 'active', deleted_at: { $exists: false } })
+      .find(this.activeAddressFilter(objectId, { status: 'active' }))
       .exec();
     if (remaining.length === 0) {
       await this.userProfileModel
@@ -522,5 +658,64 @@ export class UsersService {
         .exec();
     }
     return { message: 'Đã xóa address' };
+  }
+
+  // ================= SAVED VOUCHERS (VÍ VOUCHER KHÁCH HÀNG) =================
+
+  async addSavedVoucher(userId: string, dto: SaveVoucherDto) {
+    const objectId = this.toObjectId(userId);
+    const code = dto.code.trim().toUpperCase();
+    const entry = {
+      code,
+      name: dto.name || `Voucher ${code}`,
+      discount_amount: dto.discount_amount ?? 0,
+      expires_at: dto.expires_at ? new Date(dto.expires_at) : undefined,
+      min_order: dto.min_order ?? 0,
+      saved_at: new Date(),
+    };
+
+    const profile = await this.userProfileModel.findOne({ user_id: objectId }).exec();
+    const list = [...(profile?.saved_vouchers || [])];
+    const idx = list.findIndex((v) => v.code === code);
+    if (idx >= 0) {
+      list[idx] = { ...list[idx], ...entry };
+    } else {
+      list.unshift(entry);
+    }
+
+    const updated = await this.userProfileModel
+      .findOneAndUpdate(
+        { user_id: objectId },
+        { $set: { saved_vouchers: list } },
+        { new: true, upsert: true },
+      )
+      .exec();
+
+    return updated?.saved_vouchers || list;
+  }
+
+  async removeSavedVoucher(userId: string, code: string) {
+    const objectId = this.toObjectId(userId);
+    const normalized = code.trim().toUpperCase();
+    const profile = await this.userProfileModel.findOne({ user_id: objectId }).exec();
+    if (!profile) throw new NotFoundException('Không tìm thấy hồ sơ');
+
+    const list = (profile.saved_vouchers || []).filter((v) => v.code !== normalized);
+    await this.userProfileModel
+      .updateOne({ user_id: objectId }, { $set: { saved_vouchers: list } })
+      .exec();
+
+    return { message: 'Đã xóa voucher khỏi ví' };
+  }
+
+  async updateAvatarUrl(userId: string, avatarUrl: string) {
+    const objectId = this.toObjectId(userId);
+    return this.userProfileModel
+      .findOneAndUpdate(
+        { user_id: objectId },
+        { $set: { avatar_url: avatarUrl } },
+        { new: true, upsert: true },
+      )
+      .exec();
   }
 }

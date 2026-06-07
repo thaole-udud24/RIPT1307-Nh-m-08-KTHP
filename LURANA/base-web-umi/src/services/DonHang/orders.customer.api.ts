@@ -1,6 +1,6 @@
-import { request } from 'umi';
+import request from '@/services/base/request';
 
-export type PaymentMethod = 'COD' | 'BANK_TRANSFER' | 'VIETQR';
+export type PaymentMethod = 'cod' | 'bank_transfer';
 
 export interface ShippingAddress {
   fullName: string;
@@ -24,17 +24,35 @@ export interface ListMyOrdersParams {
   status?: string;
 }
 
-// Đặt hàng — dùng items trong giỏ hàng hiện tại của user
+export interface CheckoutOrderResult {
+  _id: string;
+  orderCode: string;
+  originalTotal: number;
+  shippingFee: number;
+  discountAmount: number;
+  appliedVoucher?: string | null;
+  totalAmount: number;
+  paymentMethod: PaymentMethod;
+  paymentStatus: string;
+  qrUrl?: string;
+  paymentTimeout?: string;
+  shippingAddress: ShippingAddress;
+  items: Array<{
+    name: string;
+    variantName: string;
+    quantity: number;
+    priceSell: number;
+  }>;
+}
+
 export async function checkout(data: CheckoutPayload) {
   return request('/api/orders/checkout', { method: 'POST', data });
 }
 
-// Danh sách đơn hàng của tôi
 export async function getMyOrders(params?: ListMyOrdersParams) {
   return request('/api/orders/my-orders', { method: 'GET', params });
 }
 
-// Chi tiết 1 đơn hàng
 export async function getOrderDetail(id: string) {
   return request(`/api/orders/${id}`, { method: 'GET' });
 }

@@ -12,6 +12,8 @@ import { CatalogModule } from '../catalog/catalog.module';
 import { VouchersModule } from '../vouchers/vouchers.module';
 import { PromotionsModule } from '../promotions/promotions.module';
 import { ExcelBaseService } from 'src/shared/csv/excel.service';
+import { NotificationsModule } from '../notifications/notifications.module';
+import { UsersModule } from '../users/users.module';
 
 @Module({
   imports: [
@@ -25,6 +27,8 @@ import { ExcelBaseService } from 'src/shared/csv/excel.service';
     CatalogModule,
     VouchersModule,
     PromotionsModule,
+    NotificationsModule,
+    UsersModule,
   ],
   controllers: [
     OrdersController, 

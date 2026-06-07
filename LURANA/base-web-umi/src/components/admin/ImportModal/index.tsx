@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Modal, Steps, Upload, Button, Select, Table, message, Tag, Space, InputNumber } from 'antd';
 import { UploadOutlined, DownloadOutlined, CheckCircleFilled, CloseOutlined, ArrowRightOutlined } from '@ant-design/icons';
-import * as XLSX from 'xlsx-js-style';
+import * as XLSX from 'xlsx';
 import styles from './styles.less';
 
 const { Dragger } = Upload;
@@ -174,29 +174,7 @@ export default function ImportModal({
 
     const ws = XLSX.utils.aoa_to_sheet([headerRow_data, sampleRow]);
 
-    // Style từng ô header
-    fields.forEach((f, colIndex) => {
-      const cellRef = XLSX.utils.encode_cell({ r: 0, c: colIndex });
-      if (!ws[cellRef]) ws[cellRef] = { v: f.label, t: 's' };
-      ws[cellRef].s = {
-        font: { bold: true, color: { rgb: 'FFFFFF' }, sz: 12 },
-        fill: {
-          patternType: 'solid',
-          fgColor: { rgb: f.required ? 'E53E3E' : '3182CE' }, // đỏ = bắt buộc, xanh = không bắt buộc
-        },
-        alignment: { horizontal: 'center', vertical: 'center', wrapText: true },
-        border: {
-          top: { style: 'thin', color: { rgb: 'CCCCCC' } },
-          bottom: { style: 'thin', color: { rgb: 'CCCCCC' } },
-          left: { style: 'thin', color: { rgb: 'CCCCCC' } },
-          right: { style: 'thin', color: { rgb: 'CCCCCC' } },
-        },
-      };
-    });
-
-    // Set column width
     ws['!cols'] = fields.map(() => ({ wch: 25 }));
-    ws['!rows'] = [{ hpt: 28 }, { hpt: 22 }];
 
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, 'FULL_DATA');
@@ -271,8 +249,8 @@ export default function ImportModal({
               </p>
             </Dragger>
 
-            <div style={{ display: 'flex', gap: 24, marginTop: 24 }}>
-              <div style={{ flex: 1 }}>
+            <div className={styles.stepRow}>
+              <div className={styles.stepRowCol}>
                 <div style={{ fontWeight: 600, fontSize: 15, color: '#1F2937', marginBottom: 8 }}>
                   Trang tính chứa dữ liệu <span style={{ color: '#ef4444' }}>*</span>
                 </div>
@@ -286,7 +264,7 @@ export default function ImportModal({
                   options={sheetNames.map(s => ({ label: s, value: s }))}
                 />
               </div>
-              <div style={{ flex: 1 }}>
+              <div className={styles.stepRowCol}>
                 <div style={{ fontWeight: 600, fontSize: 15, color: '#1F2937', marginBottom: 8 }}>
                   Dòng làm tiêu đề cột
                 </div>
@@ -339,7 +317,7 @@ export default function ImportModal({
             <p style={{ color: '#64748b', marginBottom: 24, fontSize: 13 }}>
               Hệ thống đã tự động ghép các cột có tên trùng khớp. Kiểm tra và điều chỉnh nếu cần.
             </p>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px 32px' }}>
+            <div className={styles.mappingGrid}>
               {fields.map(field => {
                 const isMapped = !!mapping[field.key];
                 const isMissing = field.required && !isMapped;

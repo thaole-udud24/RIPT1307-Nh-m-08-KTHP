@@ -1,7 +1,35 @@
 import { history } from 'umi';
 import '@/styles/global.less';
+import '@/styles/admin-tokens.less';
 import '@/styles/admin.less';
+import '@/styles/admin-theme.less';
+import '@/styles/admin-responsive.less';
 import { getMe } from '@/services/TaiKhoan/users.api';
+import { setupLuranaToast } from '@/utils/luranaToast';
+import { initAdminTheme } from '@/utils/adminTheme';
+import { hasAdminRole } from '@/pages/auth/auth.utils';
+
+setupLuranaToast();
+
+if (typeof window !== 'undefined' && window.location.pathname.startsWith('/admin')) {
+  initAdminTheme();
+}
+
+const readStoredRoles = (): string[] => {
+  try {
+    const userRaw = localStorage.getItem('user');
+    if (userRaw) {
+      const user = JSON.parse(userRaw);
+      if (Array.isArray(user?.roles)) return user.roles;
+    }
+    const role = localStorage.getItem('role');
+    return role ? [role] : [];
+  } catch {
+    return [];
+  }
+};
+
+const isAdminUser = () => hasAdminRole(readStoredRoles());
 
 // ==========================================
 // 1. CONFIG LAYOUT (Tắt Layout mặc định của Umi Pro)
@@ -81,21 +109,40 @@ export function onRouteChange({ location }: any) {
   
   const isAdminPage = pathname.startsWith('/admin');
   const isAuthPage = pathname.startsWith('/auth');
+  const protectedCustomerPaths = ['/account', '/checkout', '/orders', '/orderdetail', '/notifications'];
+  const isProtectedCustomer = protectedCustomerPaths.some(
+    (p) => pathname === p || pathname.startsWith(`${p}/`),
+  );
 
   // Trường hợp 1: Chưa đăng nhập mà cố tình vào trang Admin quản trị -> Đá về Login
   if (!token && isAdminPage) {
-    history.replace('/auth/login');
+    history.replace('/auth/login?redirect=%2Fadmin%2Fdashboard');
     return;
   }
 
-  // Trường hợp 2: Đã đăng nhập rồi mà cố tình quay lại trang Login/Register -> Đá vào Dashboard
+  if (!token && isProtectedCustomer) {
+    history.replace(`/auth/login?redirect=${encodeURIComponent(pathname + (location.search || ''))}`);
+    return;
+  }
+
+  // Trường hợp 1b: User thường không được vào admin
+  if (token && isAdminPage && !isAdminUser()) {
+    history.replace('/home');
+    return;
+  }
+
+  // Trường hợp 2: Đã đăng nhập rồi mà cố tình quay lại trang Login/Register
   if (token && isAuthPage) {
-    history.replace('/admin/dashboard');
+    history.replace(isAdminUser() ? '/admin/dashboard' : '/home');
     return;
   }
 
-  // Trường hợp 3: Khi vừa bật web (Đường dẫn gốc '/') mà có sẵn token Admin -> Đẩy thẳng vào Quản trị
+  // Trường hợp 3: Vào gốc '/' khi đã có token
   if (token && pathname === '/') {
-    history.replace('/admin/dashboard');
+    history.replace(isAdminUser() ? '/admin/dashboard' : '/home');
+  }
+
+  if (pathname.startsWith('/admin')) {
+    initAdminTheme();
   }
 }

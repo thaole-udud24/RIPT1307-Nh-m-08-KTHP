@@ -1,35 +1,93 @@
 import { extend } from 'umi-request';
 import { message } from 'antd';
 import { history } from 'umi';
+import { getRequestPrefix, buildApiUrl } from '@/utils/apiUrl';
+import { AUTH_SESSION_EVENT } from '@/pages/auth/auth.utils';
+
+const AUTH_PUBLIC_API_PATTERN =
+  /\/api\/auth\/(login|register|verify-email|resend-verify-email|forgot-password|reset-password|refresh)(\/|$|\?)/;
+
+let refreshPromise: Promise<string | null> | null = null;
+
+const tryRefreshToken = async (): Promise<string | null> => {
+  if (refreshPromise) return refreshPromise;
+
+  refreshPromise = (async () => {
+    const storedRefresh = localStorage.getItem('refreshToken');
+    if (!storedRefresh) return null;
+
+    try {
+      const res = await fetch(buildApiUrl('/api/auth/refresh'), {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ refreshToken: storedRefresh }),
+      });
+
+      if (!res.ok) return null;
+
+      const body = await res.json();
+      const payload = body?.data ?? body;
+      const accessToken = payload?.accessToken || payload?.access_token;
+      const newRefresh = payload?.refreshToken || payload?.refresh_token;
+
+      if (!accessToken) return null;
+
+      localStorage.setItem('token', accessToken);
+      if (newRefresh) {
+        localStorage.setItem('refreshToken', newRefresh);
+      }
+      window.dispatchEvent(new CustomEvent(AUTH_SESSION_EVENT));
+      return accessToken;
+    } catch {
+      return null;
+    } finally {
+      refreshPromise = null;
+    }
+  })();
+
+  return refreshPromise;
+};
 
 const request = extend({
-  prefix: '', // Để trống nếu bạn dùng proxy trong file config, hoặc điền 'http://localhost:3000' nếu gọi trực tiếp
-  timeout: 10000,
-  headers: {
-    'Content-Type': 'application/json',
-  },
-  
-  // =========================
-  // GLOBAL ERROR HANDLER
-  // =========================
-  errorHandler: (error) => {
-    const { response } = error;
-    
+  prefix: getRequestPrefix(),
+  timeout: 30000,
+
+  errorHandler: async (error) => {
+    const { response, request: reqMeta } = error;
+    const requestUrl = String(reqMeta?.url || error?.url || '');
+    const isAuthPublicRequest = AUTH_PUBLIC_API_PATTERN.test(requestUrl);
+    const isOnAuthPage =
+      typeof window !== 'undefined' && window.location.pathname.startsWith('/auth');
+    const alreadyRetried = Boolean((reqMeta as { _retried?: boolean })?._retried);
+
     if (response && response.status) {
-      // Nếu lỗi 401 -> Hết phiên đăng nhập -> Xóa token và bắt đăng nhập lại
       if (response.status === 401) {
-        message.error('Phiên đăng nhập đã hết hạn, vui lòng đăng nhập lại!');
-        localStorage.removeItem('token');
-        
-        // Tránh bị loop redirect nếu đang ở sẵn trang login
-        if (history.location.pathname !== '/auth/login') {
-          history.push('/auth/login');
+        if (!isAuthPublicRequest && !isOnAuthPage && !alreadyRetried) {
+          const newToken = await tryRefreshToken();
+          if (newToken) {
+            const retryOptions = {
+              ...(reqMeta?.options || {}),
+              _retried: true,
+              headers: {
+                ...(reqMeta?.options?.headers as Record<string, string>),
+                Authorization: `Bearer ${newToken}`,
+              },
+            };
+            return request(requestUrl, retryOptions);
+          }
+
+          message.error('Phiên đăng nhập đã hết hạn, vui lòng đăng nhập lại!');
+          localStorage.removeItem('token');
+          localStorage.removeItem('refreshToken');
+
+          if (history.location.pathname !== '/auth/login') {
+            history.push('/auth/login');
+          }
         }
       } else if (response.status >= 500) {
         message.error('Lỗi máy chủ Backend, vui lòng thử lại sau!');
       }
-    } else {
-      // Lỗi không có response (Ví dụ: Backend sập, đứt cáp mạng...)
+    } else if (!isAuthPublicRequest) {
       message.error('Không thể kết nối đến máy chủ!');
     }
 
@@ -37,16 +95,23 @@ const request = extend({
   },
 });
 
-// =========================
-// REQUEST INTERCEPTOR
-// =========================
 request.interceptors.request.use((url, options) => {
   const token = localStorage.getItem('token');
-  
-  // Clone lại headers cũ để không bị mất các cấu hình mặc định
-  const headers: any = { ...options.headers };
+  const isFormUpload =
+    options.data instanceof FormData ||
+    options.requestType === 'form';
 
-  // CHỈ thêm Authorization khi có Token thật sự
+  const headers: Record<string, string> = {
+    ...(options.headers as Record<string, string>),
+  };
+
+  if (!isFormUpload) {
+    headers['Content-Type'] = headers['Content-Type'] || 'application/json';
+  } else {
+    delete headers['Content-Type'];
+    delete headers['content-type'];
+  }
+
   if (token) {
     headers.Authorization = `Bearer ${token}`;
   }
@@ -58,14 +123,6 @@ request.interceptors.request.use((url, options) => {
       headers,
     },
   };
-});
-
-// =========================
-// RESPONSE INTERCEPTOR
-// =========================
-request.interceptors.response.use(async (response) => {
-  // Bạn có thể format lại data trả về ở đây nếu Backend bọc quá nhiều tầng (VD: res.data.data)
-  return response;
 });
 
 export default request;

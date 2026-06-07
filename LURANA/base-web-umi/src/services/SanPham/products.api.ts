@@ -1,4 +1,4 @@
-import { request } from 'umi';
+import request from '@/services/base/request';
 import type { CreateProductDto, UpdateProductDto } from './types';
 
 // Strip các field BE không chấp nhận trong variants
@@ -6,9 +6,15 @@ const cleanVariants = (variants?: any[]) =>
   variants?.map(({ reservedQty, originalPrice, profit, ...rest }) => rest) ?? [];
 
 export async function getAdminProducts(params?: any) {
-  return request('/api/products', {
+  return request('/api/admin/products', {
     method: 'GET',
     params,
+  });
+}
+
+export async function getAdminProductById(id: string) {
+  return request(`/api/admin/products/${id}`, {
+    method: 'GET',
   });
 }
 
@@ -32,6 +38,14 @@ export async function updateProduct(id: string, data: UpdateProductDto) {
   });
 }
 
+export async function updateProductStatus(id: string, isActive: boolean) {
+  return request(`/api/admin/products/${id}/status`, {
+    method: 'PATCH',
+    data: { isActive },
+  });
+}
+
+/** @deprecated dùng updateProductStatus */
 export async function toggleProductStatus(id: string) {
   return request(`/api/admin/products/${id}/toggle`, {
     method: 'PATCH',

@@ -3,6 +3,7 @@ import { Upload, message } from 'antd';
 import { PlusOutlined, LoadingOutlined, DeleteOutlined, EyeOutlined } from '@ant-design/icons';
 import type { UploadFile, UploadProps } from 'antd/es/upload/interface';
 import { uploadImage } from '@/services/SanPham/products.api';
+import { resolveMediaUrl } from '@/utils/adminApi';
 
 interface ProductImageUploadProps {
   value?: UploadFile[];       // ✅ Form.Item truyền vào đây
@@ -10,11 +11,7 @@ interface ProductImageUploadProps {
   maxCount?: number;
 }
 
-const toPreviewUrl = (file: UploadFile): string => {
-  const raw = file.response?.url || file.url || '';
-  if (!raw) return '';
-  return raw.startsWith('http') ? raw : `http://localhost:3000${raw}`;
-};
+const toPreviewUrl = (file: UploadFile): string => resolveMediaUrl(file.response?.url || file.url || '');
 
 export default function ProductImageUpload({
   value = [],

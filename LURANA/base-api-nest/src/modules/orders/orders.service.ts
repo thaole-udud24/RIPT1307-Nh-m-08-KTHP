@@ -1,4 +1,4 @@
-import { Injectable, BadRequestException, NotFoundException } from '@nestjs/common';
+import { Injectable, BadRequestException, NotFoundException, Logger } from '@nestjs/common';
 import { InjectModel, InjectConnection } from '@nestjs/mongoose';
 import { Model, Connection, Types } from 'mongoose';
 import { Order, OrderDocument } from './schemas/order.schema';
@@ -11,9 +11,14 @@ import { VouchersService } from '../vouchers/vouchers.service';
 import { VoucherUsage, VoucherUsageDocument } from '../vouchers/schemas/voucher-usage.schema';
 import { PromotionsService } from '../promotions/promotions.service';
 import { ExcelBaseService } from 'src/shared/csv/excel.service';
+import { NotificationsService } from '../notifications/notifications.service';
+import { UsersService } from '../users/users.service';
+import { calcShippingFee } from 'src/common/constants/shipping.constant';
 
 @Injectable()
 export class OrdersService {
+  private readonly logger = new Logger(OrdersService.name);
+
   constructor(
     @InjectModel(Order.name) private orderModel: Model<OrderDocument>,
     @InjectModel(Cart.name) private cartModel: Model<Cart>,
@@ -23,6 +28,8 @@ export class OrdersService {
     private readonly vouchersService: VouchersService,
     private readonly promotionsService: PromotionsService,
     private readonly excelService: ExcelBaseService,
+    private readonly notificationsService: NotificationsService,
+    private readonly usersService: UsersService,
   ) {}
 
   async checkout(userId: string, checkoutDto: CheckoutDto) {
@@ -74,7 +81,7 @@ export class OrdersService {
 
       let discountAmount = 0;
       let appliedVoucherCode: string | null = null;
-      const shippingFee = 40000;
+      const shippingFee = calcShippingFee(cartTotal);
 
       if (checkoutDto.voucherCode) {
         const productIds = cart.items.map(item => item.productId.toString());
@@ -140,6 +147,9 @@ export class OrdersService {
       await this.cartModel.deleteOne({ userId: new Types.ObjectId(userId) }).session(session);
 
       await session.commitTransaction();
+
+      await this.notifyOrderCreated(userId, savedOrder);
+
       return savedOrder;
     } catch (error) {
       await session.abortTransaction();
@@ -175,6 +185,9 @@ export class OrdersService {
       await order.save({ session });
 
       await session.commitTransaction();
+
+      await this.notifyOrderProcessing(order);
+
       return order;
     } catch (error) {
       await session.abortTransaction();
@@ -210,6 +223,9 @@ export class OrdersService {
       await order.save({ session });
 
       await session.commitTransaction();
+
+      await this.notifyOrderCancelled(order, reason);
+
       return order;
     } catch (error) {
       await session.abortTransaction();
@@ -263,7 +279,7 @@ export class OrdersService {
       filters.$or = [
         { orderCode: new RegExp(search, 'i') },
         { 'shippingAddress.phone': new RegExp(search, 'i') },
-        { 'shippingAddress.customerName': new RegExp(search, 'i') },
+        { 'shippingAddress.fullName': new RegExp(search, 'i') },
       ];
     }
     const skip = (page - 1) * limit;
@@ -274,7 +290,6 @@ export class OrdersService {
     return { data, total, page, limit };
   }
 
-  // ✅ THÊM MỚI
   async findOneAdmin(id: string) {
     if (!Types.ObjectId.isValid(id)) throw new BadRequestException('Mã đơn hàng không hợp lệ.');
     const order = await this.orderModel
@@ -287,9 +302,141 @@ export class OrdersService {
 
   async updateStatus(id: string, status: OrderStatus) {
     if (!Types.ObjectId.isValid(id)) throw new BadRequestException('Mã đơn hàng không hợp lệ.');
-    const order = await this.orderModel.findByIdAndUpdate(id, { status }, { new: true }).exec();
+    const order = await this.orderModel.findById(id).exec();
     if (!order) throw new NotFoundException('Không tìm thấy đơn hàng');
+
+    if (order.status === OrderStatus.CANCELLED) {
+      throw new BadRequestException('Không thể đổi trạng thái đơn đã hủy');
+    }
+    if (status === OrderStatus.CANCELLED) {
+      throw new BadRequestException('Vui lòng dùng chức năng hủy đơn và nhập lý do');
+    }
+    if (status === OrderStatus.COMPLETED && order.paymentStatus !== 'PAID') {
+      throw new BadRequestException('Chỉ có thể hoàn thành đơn đã thanh toán');
+    }
+
+    order.status = status;
+    await order.save();
+
+    await this.notifyOrderStatusChanged(order, status);
+
     return order;
+  }
+
+  private async notifyOrderCreated(userId: string, order: OrderDocument) {
+    try {
+      const firstItem = order.items?.[0];
+      const productHint = firstItem?.name
+        ? ` gồm "${firstItem.name}"${order.items.length > 1 ? ' và các sản phẩm khác' : ''}`
+        : '';
+
+      await this.notificationsService.createOrderNotification({
+        userId,
+        orderId: order._id.toString(),
+        orderCode: order.orderCode,
+        title: `Đặt hàng thành công #${order.orderCode}`,
+        message: `Đơn hàng${productHint} đã được tạo. Vui lòng hoàn tất thanh toán trong 15 phút để LURANA xử lý đơn của bạn.`,
+        actionLink: `/orderdetail?id=${order._id.toString()}`,
+      });
+
+      const adminIds = await this.usersService.findAdminUserIdsForNotification('newOrderAlerts');
+      if (adminIds.length) {
+        const customerName = order.shippingAddress?.fullName || 'Khách hàng';
+        await this.notificationsService.notifyAdminsOrderEvent({
+          adminUserIds: adminIds,
+          orderId: order._id.toString(),
+          orderCode: order.orderCode,
+          title: `Đơn mới #${order.orderCode} cần xử lý`,
+          message: `${customerName} vừa đặt đơn ${new Intl.NumberFormat('vi-VN').format(order.totalAmount || 0)}đ. Trạng thái: Chờ xác nhận.`,
+          actionLink: `/admin/orders/${order._id.toString()}`,
+        });
+      }
+    } catch (error) {
+      this.logger.error('[Orders] Tạo thông báo đặt hàng thất bại:', error);
+    }
+  }
+
+  private async notifyOrderProcessing(order: OrderDocument) {
+    try {
+      await this.notificationsService.createOrderNotification({
+        userId: order.userId.toString(),
+        orderId: order._id.toString(),
+        orderCode: order.orderCode,
+        title: `Đơn hàng #${order.orderCode} đang được xử lý`,
+        message: 'Thanh toán đã được xác nhận. Đơn hàng của bạn đang được chuẩn bị và sẽ sớm được giao.',
+        actionLink: `/orderdetail?id=${order._id.toString()}`,
+      });
+    } catch (error) {
+      this.logger.error('[Orders] Tạo thông báo xử lý đơn thất bại:', error);
+    }
+  }
+
+  private async notifyOrderCancelled(order: OrderDocument, reason?: string) {
+    try {
+      await this.notificationsService.createOrderNotification({
+        userId: order.userId.toString(),
+        orderId: order._id.toString(),
+        orderCode: order.orderCode,
+        title: `Đơn hàng #${order.orderCode} đã bị hủy`,
+        message: reason
+          ? `Đơn hàng đã bị hủy. Lý do: ${reason}`
+          : 'Đơn hàng của bạn đã bị hủy. Liên hệ LURANA nếu bạn cần hỗ trợ thêm.',
+        actionLink: `/account?tab=ORDERS`,
+      });
+
+      const adminIds = await this.usersService.findAdminUserIdsForNotification('cancelOrderAlerts');
+      if (adminIds.length) {
+        await this.notificationsService.notifyAdminsOrderEvent({
+          adminUserIds: adminIds,
+          orderId: order._id.toString(),
+          orderCode: order.orderCode,
+          title: `Đơn #${order.orderCode} đã hủy`,
+          message: reason
+            ? `Đơn hàng đã bị hủy. Lý do: ${reason}`
+            : 'Một đơn hàng vừa được hủy trên hệ thống.',
+          actionLink: `/admin/orders/${order._id.toString()}`,
+        });
+      }
+    } catch (error) {
+      this.logger.error('[Orders] Tạo thông báo hủy đơn thất bại:', error);
+    }
+  }
+
+  private async notifyOrderStatusChanged(order: OrderDocument, status: OrderStatus) {
+    const statusMessages: Partial<Record<OrderStatus, { title: string; message: string }>> = {
+      [OrderStatus.CONFIRMED]: {
+        title: `Đơn hàng #${order.orderCode} đã được xác nhận`,
+        message: 'Đơn hàng của bạn đã được xác nhận và sẽ sớm được xử lý.',
+      },
+      [OrderStatus.PROCESSING]: {
+        title: `Đơn hàng #${order.orderCode} đang được giao`,
+        message: 'Đơn hàng đã được bàn giao cho đơn vị vận chuyển. Vui lòng chú ý điện thoại từ shipper nhé.',
+      },
+      [OrderStatus.COMPLETED]: {
+        title: `Giao hàng thành công đơn #${order.orderCode}`,
+        message: 'Đơn hàng đã được giao thành công. Cảm ơn bạn đã mua sắm cùng LURANA!',
+      },
+      [OrderStatus.CANCELLED]: {
+        title: `Đơn hàng #${order.orderCode} đã bị hủy`,
+        message: 'Đơn hàng của bạn đã bị hủy.',
+      },
+    };
+
+    const payload = statusMessages[status];
+    if (!payload) return;
+
+    try {
+      await this.notificationsService.createOrderNotification({
+        userId: order.userId.toString(),
+        orderId: order._id.toString(),
+        orderCode: order.orderCode,
+        title: payload.title,
+        message: payload.message,
+        actionLink: `/orderdetail?id=${order._id.toString()}`,
+      });
+    } catch (error) {
+      this.logger.error('[Orders] Tạo thông báo cập nhật trạng thái thất bại:', error);
+    }
   }
 
   async exportOrdersAdmin(query: any) {
@@ -301,7 +448,7 @@ export class OrdersService {
       filters.$or = [
         { orderCode: new RegExp(search, 'i') },
         { 'shippingAddress.phone': new RegExp(search, 'i') },
-        { 'shippingAddress.customerName': new RegExp(search, 'i') },
+        { 'shippingAddress.fullName': new RegExp(search, 'i') },
       ];
     }
 
@@ -309,7 +456,12 @@ export class OrdersService {
 
     const allFieldsMap: Record<string, (item: any) => any> = {
       orderCode: (item) => item.orderCode || 'N/A',
-      customer: (item) => `${item.shippingAddress?.customerName || 'N/A'} - ${item.shippingAddress?.phone || 'N/A'}`,
+      customer: (item) => {
+        const addr = item.shippingAddress || {};
+        const name = addr.fullName || addr.customerName || 'N/A';
+        const phone = addr.phone || 'N/A';
+        return `${name} - ${phone}`;
+      },
       totalAmount: (item) => item.totalAmount || 0,
       status: (item) => item.status || 'N/A',
     };

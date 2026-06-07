@@ -1,142 +1,123 @@
 import React, { useState } from 'react';
 import { history } from 'umi';
-import { message } from 'antd';
+import { Form, message } from 'antd';
+import { UserOutlined, MailOutlined, LockOutlined, LoadingOutlined } from '@ant-design/icons';
 import { register as registerApi } from '@/services/TaiKhoan/auth.api';
+import AuthShell from '../components/AuthShell';
+import AuthFieldInput from '../components/AuthFieldInput';
+import { extractAuthError, parseApiData } from '../auth.utils';
+
+interface RegisterFormValues {
+  name: string;
+  email: string;
+  password: string;
+  confirmPassword: string;
+}
 
 export default function RegisterPage() {
-  const [form, setForm] = useState({
-    name: '',
-    email: '',
-    password: '',
-    confirmPassword: '',
-  });
-
+  const [form] = Form.useForm<RegisterFormValues>();
   const [loading, setLoading] = useState(false);
 
-  const handleChange = (e: any) => {
-    setForm({ ...form, [e.target.name]: e.target.value });
-  };
-
-  const handleRegister = async () => {
-    const { name, email, password, confirmPassword } = form;
-
-    if (!name || !email || !password || !confirmPassword) {
-      return message.error('Vui lòng nhập đầy đủ thông tin');
-    }
-
-    if (password !== confirmPassword) {
-      return message.error('Mật khẩu xác nhận không khớp');
-    }
-
+  const handleRegister = async (values: RegisterFormValues) => {
     setLoading(true);
     message.destroy();
 
     try {
-      const res: any = await registerApi({ name, email, password, confirmPassword });
-      const data = res?.data || res;
+      const res = await registerApi({
+        name: values.name.trim(),
+        email: values.email.trim(),
+        password: values.password,
+        confirmPassword: values.confirmPassword,
+      });
 
-      message.success(data?.message || 'Đăng ký thành công! Vui lòng đăng nhập.');
-      history.push('/auth/login');
+      const data = parseApiData<{ message?: string; email?: string }>(res);
+      message.success(data?.message || 'Đăng ký thành công! Kiểm tra email để lấy mã OTP.');
 
-    } catch (error: any) {
-      const errMsg =
-        error?.response?.data?.message ||
-        error?.message ||
-        'Lỗi hệ thống, vui lòng thử lại!';
-      message.error(typeof errMsg === 'string' ? errMsg : JSON.stringify(errMsg));
+      history.push(
+        `/auth/verify-email?email=${encodeURIComponent(values.email.trim())}`,
+      );
+    } catch (error) {
+      message.error(extractAuthError(error));
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="auth-page register">
-      <div className="auth-container">
+    <AuthShell
+      title="Tạo tài khoản"
+      subtitle="Tham gia LURANA để nhận ưu đãi và theo dõi đơn hàng dễ dàng"
+      backTo="/auth/login"
+      backLabel="Quay lại đăng nhập"
+      heroText="Bắt đầu hành trình chăm sóc da cùng những sản phẩm được chọn lọc dành riêng cho bạn."
+    >
+      <Form form={form} layout="vertical" onFinish={handleRegister} requiredMark={false}>
+        <Form.Item
+          name="name"
+          label={<span className="auth-field-label">Họ và tên</span>}
+          rules={[{ required: true, message: 'Vui lòng nhập họ tên' }]}
+        >
+          <AuthFieldInput icon={<UserOutlined />} placeholder="Nguyễn Văn A" autoComplete="name" />
+        </Form.Item>
 
-        {/* LEFT */}
-        <div className="auth-left">
-          <div className="auth-overlay">
-            <h1>LUNARIA</h1>
-            <p>
-              Mỗi buổi sáng là một khởi đầu mới, khi làn da cần được đánh thức
-              bằng sự dịu dàng.
-            </p>
-            <button onClick={() => history.push('/products')}>Mua ngay</button>
-          </div>
-        </div>
+        <Form.Item
+          name="email"
+          label={<span className="auth-field-label">Email</span>}
+          rules={[
+            { required: true, message: 'Vui lòng nhập email' },
+            { type: 'email', message: 'Email không hợp lệ' },
+          ]}
+        >
+          <AuthFieldInput icon={<MailOutlined />} placeholder="email@example.com" autoComplete="email" />
+        </Form.Item>
 
-        {/* RIGHT */}
-        <div className="auth-right">
-          <div className="auth-form">
+        <Form.Item
+          name="password"
+          label={<span className="auth-field-label">Mật khẩu</span>}
+          rules={[
+            { required: true, message: 'Vui lòng nhập mật khẩu' },
+            { min: 6, message: 'Mật khẩu tối thiểu 6 ký tự' },
+          ]}
+        >
+          <AuthFieldInput password icon={<LockOutlined />} placeholder="Tối thiểu 6 ký tự" autoComplete="new-password" />
+        </Form.Item>
 
-            <button className="auth-back" onClick={() => history.push('/home')}>
-              ← Trở lại
-            </button>
+        <Form.Item
+          name="confirmPassword"
+          label={<span className="auth-field-label">Xác nhận mật khẩu</span>}
+          dependencies={['password']}
+          rules={[
+            { required: true, message: 'Vui lòng xác nhận mật khẩu' },
+            ({ getFieldValue }) => ({
+              validator(_, value) {
+                if (!value || getFieldValue('password') === value) {
+                  return Promise.resolve();
+                }
+                return Promise.reject(new Error('Mật khẩu xác nhận không khớp'));
+              },
+            }),
+          ]}
+        >
+          <AuthFieldInput password icon={<LockOutlined />} placeholder="Nhập lại mật khẩu" autoComplete="new-password" />
+        </Form.Item>
 
-            <h2>TẠO TÀI KHOẢN CỦA BẠN</h2>
-            <p className="auth-desc">Tạo tài khoản mua sắm của bạn</p>
+        <button type="submit" className="auth-submit" disabled={loading}>
+          {loading ? (
+            <>
+              <LoadingOutlined spin /> Đang tạo tài khoản...
+            </>
+          ) : (
+            'Đăng ký'
+          )}
+        </button>
+      </Form>
 
-            <button
-              className="auth-google"
-              onClick={() => message.info('Tính năng đăng ký bằng Google đang được bảo trì...')}
-            >
-              🔵 Sign up with Google
-            </button>
-
-            <div className="auth-divider">Or use email</div>
-
-            <input
-              name="name"
-              placeholder="Họ và tên"
-              value={form.name}
-              onChange={handleChange}
-              disabled={loading}
-            />
-
-            <input
-              name="email"
-              placeholder="Email"
-              value={form.email}
-              onChange={handleChange}
-              disabled={loading}
-            />
-
-            <input
-              name="password"
-              type="password"
-              placeholder="Mật khẩu"
-              value={form.password}
-              onChange={handleChange}
-              disabled={loading}
-            />
-
-            <input
-              name="confirmPassword"
-              type="password"
-              placeholder="Xác nhận mật khẩu"
-              value={form.confirmPassword}
-              onChange={handleChange}
-              onKeyDown={(e) => e.key === 'Enter' && handleRegister()}
-              disabled={loading}
-            />
-
-            <button
-              className="auth-loginBtn"
-              onClick={handleRegister}
-              disabled={loading}
-            >
-              {loading ? 'Đang đăng ký...' : 'Đăng ký'}
-            </button>
-
-            <p className="auth-register">
-              Bạn đã có tài khoản?{' '}
-              <span onClick={() => history.push('/auth/login')}>Đăng nhập</span>
-            </p>
-
-          </div>
-        </div>
-
-      </div>
-    </div>
+      <p className="auth-footer">
+        Đã có tài khoản?
+        <button type="button" onClick={() => history.push('/auth/login')}>
+          Đăng nhập
+        </button>
+      </p>
+    </AuthShell>
   );
 }

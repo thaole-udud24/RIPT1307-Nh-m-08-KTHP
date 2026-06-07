@@ -1,74 +1,113 @@
 import React, { useState } from 'react';
-import { message } from 'antd';
+import { Alert, Input, message } from 'antd';
+import { LockOutlined, SafetyOutlined } from '@ant-design/icons';
+import { changePassword } from '@/services/TaiKhoan/auth.api';
+import { extractAuthError } from '@/pages/auth/auth.utils';
+import { getPasswordStrength } from '../account.utils';
 
-interface PasswordTabProps {
-  onUpdatePassword: (oldPass: string, newPass: string) => void;
-}
-
-const PasswordTab: React.FC<PasswordTabProps> = ({ onUpdatePassword }) => {
-  const [oldPass, setOldPass] = useState('');
+const PasswordTab: React.FC = () => {
+  const [currentPassword, setCurrentPassword] = useState('');
   const [newPass, setNewPass] = useState('');
   const [confirmPass, setConfirmPass] = useState('');
+  const [loading, setLoading] = useState(false);
 
-  const handleSave = () => {
-    if (!oldPass || !newPass || !confirmPass) {
-      message.error('Vui lòng điền đầy đủ các thông tin mật khẩu');
+  const strength = getPasswordStrength(newPass);
+
+  const handleChangePassword = async () => {
+    if (!currentPassword.trim()) {
+      message.error('Vui lòng nhập mật khẩu hiện tại');
+      return;
+    }
+    if (newPass.length < 8) {
+      message.error('Mật khẩu mới phải có ít nhất 8 ký tự');
       return;
     }
     if (newPass !== confirmPass) {
-      message.error('Mật khẩu mới và xác nhận mật khẩu không khớp');
+      message.error('Mật khẩu xác nhận không khớp');
       return;
     }
-    onUpdatePassword(oldPass, newPass);
-    setOldPass('');
-    setNewPass('');
-    setConfirmPass('');
+
+    setLoading(true);
+    try {
+      await changePassword({
+        currentPassword,
+        newPassword: newPass,
+        confirmNewPassword: confirmPass,
+      });
+      message.success('Đổi mật khẩu thành công');
+      setCurrentPassword('');
+      setNewPass('');
+      setConfirmPass('');
+    } catch (error) {
+      message.error(extractAuthError(error));
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
     <div className="account-card password-tab-card">
       <div className="card-header">
         <h2>Đổi mật khẩu</h2>
-        <p>Để bảo mật tài khoản, vui lòng không chia sẻ mật khẩu cho người khác</p>
+        <p>Bảo vệ tài khoản bằng mật khẩu mạnh và không chia sẻ cho người khác</p>
       </div>
 
-      <div className="password-form">
-        <div className="form-group col-12">
+      <Alert
+        type="info"
+        showIcon
+        icon={<SafetyOutlined />}
+        message="Mật khẩu mới sẽ có hiệu lực ngay sau khi bạn lưu thay đổi."
+        style={{ marginBottom: 24 }}
+      />
+
+      <div className="password-form-grid">
+        <div className="form-field">
           <label>Mật khẩu hiện tại</label>
-          <input
-            type="password"
+          <Input.Password
+            prefix={<LockOutlined />}
+            value={currentPassword}
+            onChange={(e) => setCurrentPassword(e.target.value)}
             placeholder="Nhập mật khẩu hiện tại"
-            value={oldPass}
-            onChange={(e) => setOldPass(e.target.value)}
+            size="large"
           />
         </div>
 
-        <div className="form-group col-12">
+        <div className="form-field">
           <label>Mật khẩu mới</label>
-          <input
-            type="password"
-            placeholder="Nhập mật khẩu mới"
+          <Input.Password
+            prefix={<LockOutlined />}
             value={newPass}
             onChange={(e) => setNewPass(e.target.value)}
+            placeholder="Tối thiểu 8 ký tự"
+            size="large"
           />
+          {newPass && strength.className && (
+            <div className={`password-strength password-strength--${strength.className}`}>
+              Độ mạnh: {strength.label}
+            </div>
+          )}
         </div>
 
-        <div className="form-group col-12">
+        <div className="form-field">
           <label>Xác nhận mật khẩu mới</label>
-          <input
-            type="password"
-            placeholder="Nhập lại mật khẩu mới"
+          <Input.Password
+            prefix={<LockOutlined />}
             value={confirmPass}
             onChange={(e) => setConfirmPass(e.target.value)}
+            placeholder="Nhập lại mật khẩu mới"
+            size="large"
           />
         </div>
-
-        <div className="form-actions">
-          <button className="btn-save" onClick={handleSave}>
-            Cập nhật mật khẩu
-          </button>
-        </div>
       </div>
+
+      <button
+        type="button"
+        className="account-primary-btn"
+        disabled={loading}
+        onClick={handleChangePassword}
+      >
+        {loading ? 'Đang cập nhật...' : 'Cập nhật mật khẩu'}
+      </button>
     </div>
   );
 };

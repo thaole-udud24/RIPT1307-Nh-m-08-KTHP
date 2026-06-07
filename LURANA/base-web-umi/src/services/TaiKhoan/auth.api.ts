@@ -31,9 +31,23 @@ export async function register(data: {
   name: string;
   email: string;
   password: string;
-  confirmPassword: string;  // ← thêm field này
+  confirmPassword: string;
 }) {
   return request('/api/auth/register', {
+    method: 'POST',
+    data,
+  });
+}
+
+export async function verifyEmail(data: { email: string; code: string }) {
+  return request('/api/auth/verify-email', {
+    method: 'POST',
+    data,
+  });
+}
+
+export async function resendVerifyEmail(data: { email: string }) {
+  return request('/api/auth/resend-verify-email', {
     method: 'POST',
     data,
   });
@@ -74,4 +88,23 @@ export async function resetPassword(data: {
     method: 'POST',
     data,
   });
+}
+
+export async function changePassword(data: {
+  currentPassword: string;
+  newPassword: string;
+  confirmNewPassword: string;
+}) {
+  return request('/api/auth/change-password', {
+    method: 'PATCH',
+    data,
+  });
+}
+
+export async function refreshAccessToken(refreshToken: string) {
+  return request('/api/auth/refresh', {
+    method: 'POST',
+    data: { refreshToken },
+    skipErrorHandler: true,
+  } as any);
 }

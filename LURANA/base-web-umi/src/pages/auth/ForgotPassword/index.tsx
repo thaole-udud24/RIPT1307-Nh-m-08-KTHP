@@ -1,120 +1,67 @@
 import React, { useState } from 'react';
 import { history } from 'umi';
-import { message } from 'antd';
+import { Form, message } from 'antd';
+import { MailOutlined, LoadingOutlined } from '@ant-design/icons';
 import { forgotPassword } from '@/services/TaiKhoan/auth.api';
-import { ArrowLeftOutlined, StarFilled } from '@ant-design/icons';
+import AuthShell from '../components/AuthShell';
+import AuthFieldInput from '../components/AuthFieldInput';
+import { extractAuthError, parseApiData } from '../auth.utils';
 
 export default function ForgotPasswordPage() {
-  const [email, setEmail] = useState('');
+  const [form] = Form.useForm<{ email: string }>();
   const [loading, setLoading] = useState(false);
 
-  const handleSubmit = async () => {
-    if (!email) {
-      return message.error('Vui lòng nhập email');
-    }
-
+  const handleSubmit = async (values: { email: string }) => {
     setLoading(true);
-
     try {
-      const res = await forgotPassword({ email });
-      console.log("API RESPONSE:", res);
-
-      if (!res || res.success === false) {
-      message.error(res?.message || 'Có lỗi xảy ra');
-      return;
-      }
-
-      message.success('Đã gửi email xác nhận');
-
-      localStorage.setItem('resetEmail', email);
-
-      //  CHUYỂN SANG ENTER CODE + truyền email
-      history.push(`/auth/verify-code?email=${encodeURIComponent(email)}`);
-
-    } catch (err) {
-      console.log("ERROR FULL:", err); 
-      message.error('Lỗi hệ thống');
+      const res = await forgotPassword({ email: values.email.trim() });
+      const data = parseApiData<{ message?: string }>(res);
+      message.success(data?.message || 'Nếu email tồn tại, mã đặt lại mật khẩu đã được gửi');
+      history.push(`/auth/verify-code?email=${encodeURIComponent(values.email.trim())}`);
+    } catch (error) {
+      message.error(extractAuthError(error));
     } finally {
-      setLoading(false); 
+      setLoading(false);
     }
   };
 
   return (
-    <div className="auth-page forgot-password">
-      <div className="auth-container">
-        {/* LEFT PANEL */}
-        <div className="auth-left">
-          <div className="auth-shapes">
-            <div className="shape shape-1"></div>
-            <div className="shape shape-2"></div>
-            <div className="shape shape-3"></div>
-          </div>
-          <div className="auth-overlay">
-            <h1 className="logo-animated-text">LUNARIA</h1>
-            <p>
-              Chúng tôi sẽ giúp bạn lấy lại quyền truy cập nhanh chóng và an toàn nhất.
-            </p>
-            <div className="auth-features">
-              <div className="feature-item">
-                <StarFilled className="feature-icon" />
-                <span>100% Nguyên liệu hữu cơ lành tính</span>
-              </div>
-              <div className="feature-item">
-                <StarFilled className="feature-icon" />
-                <span>Công thức sinh học tiên tiến độc quyền</span>
-              </div>
-              <div className="feature-item">
-                <StarFilled className="feature-icon" />
-                <span>Nuôi dưỡng làn da căng mọng tự nhiên</span>
-              </div>
-            </div>
-            <button className="auth-explore-btn" onClick={() => history.push('/products')}>Mua ngay</button>
-          </div>
-        </div>
+    <AuthShell
+      title="Quên mật khẩu"
+      subtitle="Nhập email để nhận mã xác minh đặt lại mật khẩu"
+      backTo="/auth/login"
+      backLabel="Quay lại đăng nhập"
+      heroText="Chúng tôi sẽ giúp bạn lấy lại quyền truy cập tài khoản một cách an toàn."
+    >
+      <Form form={form} layout="vertical" onFinish={handleSubmit} requiredMark={false}>
+        <Form.Item
+          name="email"
+          label={<span className="auth-field-label">Email</span>}
+          rules={[
+            { required: true, message: 'Vui lòng nhập email' },
+            { type: 'email', message: 'Email không hợp lệ' },
+          ]}
+        >
+          <AuthFieldInput icon={<MailOutlined />} placeholder="email@example.com" autoComplete="email" />
+        </Form.Item>
 
-        {/* RIGHT PANEL */}
-        <div className="auth-right">
-          <div className="auth-form">
-            <div className="auth-top">
-              <button
-                className="auth-back"
-                onClick={() => history.push('/auth/login')}
-              >
-                <ArrowLeftOutlined /> Quay lại đăng nhập
-              </button>
-            </div>
+        <button type="submit" className="auth-submit" disabled={loading}>
+          {loading ? (
+            <>
+              <LoadingOutlined spin /> Đang gửi...
+            </>
+          ) : (
+            'Gửi mã xác minh'
+          )}
+        </button>
+      </Form>
 
-            <h2>Quên mật khẩu</h2>
-            <p className="auth-desc">
-              Nhập địa chỉ Email của bạn để nhận mã xác minh đặt lại mật khẩu
-            </p>
-
-            <div className="input-group">
-              <input
-                type="email"
-                placeholder="Địa chỉ Email của bạn"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-              />
-            </div>
-
-            <button
-              className="auth-loginBtn"
-              onClick={handleSubmit}
-              disabled={loading}
-            >
-              {loading ? 'Đang gửi...' : 'Gửi mã xác minh'}
-            </button>
-
-            <p className="auth-register">
-              Nhớ mật khẩu?{' '}
-              <span onClick={() => history.push('/auth/login')}>
-                Đăng nhập ngay
-              </span>
-            </p>
-          </div>
-        </div>
-      </div>
-    </div>
+      <p className="auth-footer">
+        Nhớ mật khẩu?
+        <button type="button" onClick={() => history.push('/auth/login')}>
+          Đăng nhập ngay
+        </button>
+      </p>
+    </AuthShell>
   );
 }

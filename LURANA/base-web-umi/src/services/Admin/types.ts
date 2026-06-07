@@ -2,6 +2,7 @@
 export interface StatSummary {
   count: number;
   potentialRevenue: number;
+  ringPercent?: number;
 }
 
 export interface DashboardStats {
@@ -14,6 +15,9 @@ export interface DashboardStats {
 // Dữ liệu đơn hàng mới
 export interface RecentOrder {
   id: string;
+  orderId?: string;
+  orderCode?: string;
+  status?: string;
   productName: string;
   quantity: number;
   price: number;
@@ -33,20 +37,22 @@ export interface RevenueData {
   chartData: ChartDataPoint[];
 }
 
-// Sản phẩm bán chạy
 export interface BestSeller {
   id: string;
   name: string;
   imageUrl: string;
+  sales?: number;
 }
 
-// Tổng hợp payload trả về từ API
 export interface DashboardResponse {
   success: boolean;
   data: {
     stats: DashboardStats;
     recentOrders: RecentOrder[];
     revenue: RevenueData;
+    revenueWeek?: RevenueData;
+    revenueMonth?: RevenueData;
+    revenueYear?: RevenueData;
     bestSellers: BestSeller[];
   };
 }

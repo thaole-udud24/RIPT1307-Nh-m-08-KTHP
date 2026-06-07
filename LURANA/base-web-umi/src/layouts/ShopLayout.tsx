@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { 
+import {
   ShoppingCartOutlined, 
   UserOutlined, 
   BellOutlined,
@@ -17,6 +17,10 @@ import {
 } from '@ant-design/icons';
 import { Link, useLocation, history } from 'umi';
 import { message } from 'antd';
+import useCart from '@/hooks/useCart';
+import useNotificationUnread from '@/hooks/useNotificationUnread';
+import ShopChatWidget from '@/components/ShopChatWidget';
+import { AUTH_SESSION_EVENT } from '@/pages/auth/auth.utils';
 import './ShopLayout.less';
 
 const getImg = (name: string) => {
@@ -61,83 +65,37 @@ const HeaderSearch: React.FC = () => {
 
 const ShopLayout: React.FC = ({ children }) => {
   const location = useLocation();
+  const { cartCount } = useCart();
   const [forceHide, setForceHide] = useState(false);
   const [currentUser, setCurrentUser] = useState<any>(null);
-  const [unreadCount, setUnreadCount] = useState(2);
-  const [cartCount, setCartCount] = useState(0);
+  const { unreadCount, refreshUnreadCount } = useNotificationUnread(location.pathname);
+
   useEffect(() => {
-    const updateCartCount = () => {
+    const syncUserFromStorage = () => {
       try {
-        const stored = localStorage.getItem('lunaria_cart_items');
-        if (stored) {
-          const parsed = JSON.parse(stored);
-          const count = parsed.reduce((acc: number, item: any) => acc + item.qty, 0);
-          setCartCount(count);
+        const u = localStorage.getItem('user');
+        if (u) {
+          setCurrentUser(JSON.parse(u));
         } else {
-          setCartCount(0);
+          setCurrentUser(null);
         }
-      } catch (err) {
-        setCartCount(0);
-      }
-    };
-
-    updateCartCount();
-    window.addEventListener('storage', updateCartCount);
-    window.addEventListener('cartUpdate', updateCartCount);
-
-    return () => {
-      window.removeEventListener('storage', updateCartCount);
-      window.removeEventListener('cartUpdate', updateCartCount);
-    };
-  }, []);
-
-
-  useEffect(() => {
-    try {
-      const u = localStorage.getItem('user');
-      if (u) {
-        setCurrentUser(JSON.parse(u));
-      } else {
+      } catch {
         setCurrentUser(null);
       }
-      const notifs = localStorage.getItem('lunaria_notifications_v2');
-      if (notifs) {
-        const parsed = JSON.parse(notifs);
-        const count = parsed.filter((n: any) => !n.isRead).length;
-        setUnreadCount(count);
-      } else {
-        setUnreadCount(0);
-      }
-    } catch (e) {
-      setCurrentUser(null);
-    }
+    };
+
+    syncUserFromStorage();
+    window.addEventListener(AUTH_SESSION_EVENT, syncUserFromStorage);
+    return () => window.removeEventListener(AUTH_SESSION_EVENT, syncUserFromStorage);
   }, [location.pathname]);
 
   useEffect(() => {
-    const updateCartCount = () => {
-      try {
-        const stored = localStorage.getItem('lunaria_cart_items');
-        if (stored) {
-          const parsed = JSON.parse(stored);
-          const count = parsed.reduce((acc: number, item: any) => acc + item.qty, 0);
-          setCartCount(count);
-        } else {
-          setCartCount(0);
-        }
-      } catch (err) {
-        setCartCount(0);
-      }
+    const handleNotificationsUpdated = () => {
+      refreshUnreadCount();
     };
-
-    updateCartCount();
-    window.addEventListener('storage', updateCartCount);
-    window.addEventListener('cartUpdate', updateCartCount);
-
-    return () => {
-      window.removeEventListener('storage', updateCartCount);
-      window.removeEventListener('cartUpdate', updateCartCount);
-    };
-  }, []);
+    window.addEventListener('notifications:updated', handleNotificationsUpdated);
+    return () => window.removeEventListener('notifications:updated', handleNotificationsUpdated);
+  }, [refreshUnreadCount]);
 
   const handleLogout = () => {
     localStorage.removeItem('token');
@@ -308,17 +266,17 @@ const ShopLayout: React.FC = ({ children }) => {
           </div>
 
           <div className="header-right header-actions">
-            <Link to="/notifications" className="notification-bell-link" style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
-              <BellOutlined className="action-icon" style={{ color: 'inherit' }} />
+            <Link to="/notifications" className="notification-bell-link">
+              <BellOutlined className="action-icon" />
               {unreadCount > 0 && <span className="header-unread-badge">{unreadCount}</span>}
             </Link>
-            <Link to="/cart" style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
-              <ShoppingCartOutlined className="action-icon" style={{ color: 'inherit' }} />
+            <Link to="/cart" className="cart-link">
+              <ShoppingCartOutlined className="action-icon" />
               {cartCount > 0 && <span className="header-unread-badge">{cartCount}</span>}
             </Link>
             <div className="user-menu-wrapper">
-              <Link to={currentUser ? "/account" : "/auth/login"}>
-                <UserOutlined className="action-icon" style={{ color: 'inherit' }} />
+              <Link to={currentUser ? "/account" : "/auth/login"} className="user-icon-link">
+                <UserOutlined className="action-icon" />
               </Link>
 
               <div className="user-menu-dropdown">
@@ -453,6 +411,8 @@ const ShopLayout: React.FC = ({ children }) => {
           <p>Copyright © 2026 Lunaria. All rights reserved.</p>
         </div>
       </footer>
+
+      <ShopChatWidget />
     </div>
   );
 };

@@ -1,4 +1,4 @@
-import { request } from 'umi';
+import request from '@/services/base/request';
 
 export interface ListProductsParams {
   search?: string;
@@ -12,6 +12,10 @@ export interface ListProductsParams {
 
 export async function getProducts(params?: ListProductsParams) {
   return request('/api/products', { method: 'GET', params });
+}
+
+export async function getBestSellingProducts(limit = 8) {
+  return request('/api/products/best-sellers', { method: 'GET', params: { limit } });
 }
 
 export async function getProductById(id: string) {

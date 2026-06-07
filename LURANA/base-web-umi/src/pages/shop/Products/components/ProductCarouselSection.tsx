@@ -2,6 +2,7 @@ import React, { useRef, useState } from 'react';
 import { Carousel, Pagination, message, Row, Col } from 'antd';
 import { HeartFilled, HeartOutlined, StarFilled, LeftOutlined, RightOutlined, ShoppingCartOutlined } from '@ant-design/icons';
 import { history } from 'umi';
+import useCart from '@/hooks/useCart';
 
 interface ProductCarouselSectionProps {
   title: string;
@@ -35,6 +36,7 @@ const getProductId = (p: any) => p._id || p.id || '';
 
 const ProductCarouselSection: React.FC<ProductCarouselSectionProps> = ({ title, products = [] }) => {
   const carouselRef = useRef<any>(null);
+  const { addItem } = useCart();
   const [viewAll, setViewAll] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [favorites, setFavorites] = useState<string[]>([]);
@@ -54,32 +56,19 @@ const ProductCarouselSection: React.FC<ProductCarouselSectionProps> = ({ title, 
     }
   };
 
-  const handleAddToCart = (e: React.MouseEvent, p: any) => {
+  const handleAddToCart = async (e: React.MouseEvent, p: any) => {
     e.stopPropagation();
-    try {
-      const stored = localStorage.getItem('lunaria_cart_items');
-      const cartItems: any[] = stored ? JSON.parse(stored) : [];
-      const price = p.variants?.[0]?.priceSell || p.price || 0;
-      const id = getProductId(p);
-      const existingIdx = cartItems.findIndex((item) => item.id === id);
+    const productId = getProductId(p);
+    const variantName = p.variants?.[0]?.variantName;
+    if (!productId || !variantName) {
+      message.info('Vui lòng chọn biến thể tại trang chi tiết sản phẩm');
+      history.push(`/products/${productId}`);
+      return;
+    }
 
-      if (existingIdx > -1) {
-        cartItems[existingIdx].qty += 1;
-      } else {
-        cartItems.push({
-          id,
-          name: p.name,
-          variant: p.variants?.[0]?.variantName || 'Mặc định',
-          price,
-          qty: 1,
-          img: getProductImage(p),
-        });
-      }
-      localStorage.setItem('lunaria_cart_items', JSON.stringify(cartItems));
-      window.dispatchEvent(new Event('cartUpdate'));
+    const ok = await addItem({ productId, variantName, quantity: 1 });
+    if (ok) {
       message.success(`Đã thêm "${p.name}" vào giỏ hàng!`);
-    } catch {
-      message.error('Lỗi khi thêm sản phẩm vào giỏ hàng');
     }
   };
 

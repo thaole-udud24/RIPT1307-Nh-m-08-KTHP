@@ -8,6 +8,8 @@ import { ListProductsDto } from './dto/list-products.dto';
 import { CreateProductDto } from './dto/create-product.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
 import { PromotionsService } from '../promotions/promotions.service';
+import { Order, OrderDocument } from '../orders/schemas/order.schema';
+import { OrderStatus } from '../../common/constants/order-status.constant';
 
 @Injectable()
 export class ProductsService {
@@ -15,6 +17,7 @@ export class ProductsService {
     @InjectModel(Product.name) private productModel: Model<ProductDocument>,
     @InjectModel(Category.name) private categoryModel: Model<CategoryDocument>,
     @InjectModel(SkinType.name) private skinTypeModel: Model<SkinTypeDocument>,
+    @InjectModel(Order.name) private orderModel: Model<OrderDocument>,
     private readonly promotionsService: PromotionsService, 
   ) {}
 
@@ -43,13 +46,41 @@ export class ProductsService {
     return `${categoryCode.toUpperCase()}-${acronym}${year}-${random}`;
   }
 
+  private applySearchFilter(filters: Record<string, unknown>, search?: string) {
+    if (!search?.trim()) return;
+    const escaped = search.trim().replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    filters.$or = [
+      { name: { $regex: escaped, $options: 'i' } },
+      { sku: { $regex: escaped, $options: 'i' } },
+      { description: { $regex: escaped, $options: 'i' } },
+    ];
+  }
+
+  private applyIsActiveFilter(filters: Record<string, unknown>, isActive?: string) {
+    if (isActive === 'true') filters.isActive = true;
+    else if (isActive === 'false') filters.isActive = false;
+  }
+
+  private validateVariants(variants?: CreateProductDto['variants']) {
+    if (!variants?.length) {
+      throw new BadRequestException('Sản phẩm phải có ít nhất một phân loại');
+    }
+    for (const variant of variants) {
+      if (!variant.variantName?.trim()) {
+        throw new BadRequestException('Tên phân loại không được để trống');
+      }
+    }
+  }
+
   async create(dto: CreateProductDto): Promise<ProductDocument> {
+    this.validateVariants(dto.variants);
+
     const category = await this.categoryModel.findById(dto.category).exec();
-    if (!category) throw new NotFoundException('Category not found');
+    if (!category) throw new NotFoundException('Không tìm thấy danh mục');
 
     const sku = this.generateAutoSKU(category.code || 'GEN', dto.name);
     const existingProduct = await this.productModel.findOne({ sku }).exec();
-    if (existingProduct) throw new BadRequestException('SKU already exists, please try again');
+    if (existingProduct) throw new BadRequestException('Mã SKU đã tồn tại, vui lòng thử lại');
 
     const slug = this.generateSlug(dto.name);
     
@@ -82,7 +113,7 @@ export class ProductsService {
     if (!Types.ObjectId.isValid(id)) throw new BadRequestException('Invalid Product ID');
     
     const product = await this.productModel.findOne({ _id: id, isDeleted: false }).exec();
-    if (!product) throw new NotFoundException('Product not found');
+    if (!product) throw new NotFoundException('Không tìm thấy sản phẩm');
 
     try {
       if (product.category && Types.ObjectId.isValid(product.category.toString())) {
@@ -127,7 +158,11 @@ export class ProductsService {
   async update(id: string, dto: UpdateProductDto): Promise<ProductDocument> {
     if (!Types.ObjectId.isValid(id)) throw new BadRequestException('Invalid Product ID');
     const existing = await this.productModel.findById(id).exec();
-    if (!existing || existing.isDeleted) throw new NotFoundException('Product not found');
+    if (!existing || existing.isDeleted) throw new NotFoundException('Không tìm thấy sản phẩm');
+
+    if (dto.variants) {
+      this.validateVariants(dto.variants as CreateProductDto['variants']);
+    }
 
     const updateData: any = { ...dto };
 
@@ -172,7 +207,7 @@ export class ProductsService {
     const { search, category, skinTypes, minPrice, maxPrice, page = 1, limit = 10 } = query;
     const filters: any = { isDeleted: false, isActive: true };
 
-    if (search) filters.$text = { $search: search };
+    this.applySearchFilter(filters, search);
     
     if (category && Types.ObjectId.isValid(category)) {
       filters.category = new Types.ObjectId(category);
@@ -237,25 +272,205 @@ export class ProductsService {
     return { data, total, page, lastPage: Math.ceil(total / limit) };
   }
 
-  async remove(id: string) {
-    if (!Types.ObjectId.isValid(id)) throw new BadRequestException('Invalid Product ID');
-    const res = await this.productModel.findByIdAndUpdate(id, { isDeleted: true });
-    if (!res) throw new NotFoundException('Product not found');
-    return { message: 'Product moved to trash' };
+  async findAllAdmin(query: ListProductsDto) {
+    const { search, category, skinTypes, minPrice, maxPrice, isActive, page = 1, limit = 10 } = query;
+    const filters: any = { isDeleted: false };
+
+    this.applySearchFilter(filters, search);
+    this.applyIsActiveFilter(filters, isActive);
+
+    if (category && Types.ObjectId.isValid(category)) {
+      filters.category = new Types.ObjectId(category);
+    }
+
+    if (skinTypes && skinTypes.length > 0) {
+      const ids = Array.isArray(skinTypes) ? skinTypes : [skinTypes];
+      const validIds = ids.filter((id) => Types.ObjectId.isValid(id)).map((id) => new Types.ObjectId(id));
+      if (validIds.length > 0) {
+        filters.skinTypes = { $in: validIds };
+      }
+    }
+
+    if (minPrice || maxPrice) {
+      filters['variants.priceSell'] = {
+        ...(minPrice !== undefined && { $gte: minPrice }),
+        ...(maxPrice !== undefined && { $lte: maxPrice }),
+      };
+    }
+
+    const skip = (page - 1) * limit;
+
+    const [rawProducts, total] = await Promise.all([
+      this.productModel
+        .find(filters)
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(limit)
+        .exec(),
+      this.productModel.countDocuments(filters),
+    ]);
+
+    const data = await Promise.all(
+      rawProducts.map(async (product) => {
+        let popProduct: any = product;
+        try {
+          if (product.category && Types.ObjectId.isValid(product.category.toString())) {
+            popProduct = await product.populate([
+              { path: 'category', select: 'name code slug' },
+              { path: 'skinTypes', select: 'name code' },
+            ]);
+          }
+        } catch (err) {}
+
+        return popProduct.toObject ? popProduct.toObject() : popProduct;
+      }),
+    );
+
+    return { data, total, page, lastPage: Math.ceil(total / limit) };
   }
 
-    async toggleStatus(id: string): Promise<ProductDocument> {
-      if (!Types.ObjectId.isValid(id)) throw new BadRequestException('Invalid Product ID');
-      const product = await this.productModel.findById(id);
-      if (!product) throw new NotFoundException('Product not found');
+  private async enrichPublicProduct(product: ProductDocument | any) {
+    let popProduct: any = product;
+    try {
+      if (product.category && Types.ObjectId.isValid(product.category.toString())) {
+        popProduct = await product.populate([
+          { path: 'category', select: 'name code slug' },
+          { path: 'skinTypes', select: 'name code' },
+        ]);
+      }
+    } catch (err) {}
 
-      const updated = await this.productModel.findByIdAndUpdate(
-        id,
-        { $set: { isActive: !product.isActive } },
-        { new: true, runValidators: false }, // ← bỏ qua validate khi toggle
+    const productObj = popProduct.toObject ? popProduct.toObject() : { ...popProduct };
+    productObj.variants = await Promise.all(
+      (productObj.variants || []).map(async (variant: any) => {
+        const activePrice = await this.promotionsService.calculateActivePrice(
+          productObj._id.toString(),
+          variant.priceSell,
+        );
+        return {
+          ...variant,
+          originalPrice: variant.priceSell,
+          priceSell: activePrice,
+        };
+      }),
+    );
+    return productObj;
+  }
+
+  /** Top sản phẩm bán chạy theo số lượng đã bán (đơn đã thanh toán) */
+  async findBestSellers(limit = 8) {
+    const safeLimit = Math.min(Math.max(Number(limit) || 8, 1), 20);
+
+    const salesRank = await this.orderModel.aggregate([
+      {
+        $match: {
+          paymentStatus: 'PAID',
+          status: { $ne: OrderStatus.CANCELLED },
+        },
+      },
+      { $unwind: '$items' },
+      {
+        $group: {
+          _id: '$items.productId',
+          totalSold: { $sum: { $ifNull: ['$items.quantity', 0] } },
+        },
+      },
+      { $match: { _id: { $ne: null }, totalSold: { $gt: 0 } } },
+      { $sort: { totalSold: -1 } },
+      { $limit: safeLimit },
+    ]);
+
+    const rankedIds = salesRank
+      .map((row) => row._id?.toString())
+      .filter((id) => id && Types.ObjectId.isValid(id));
+
+    const soldMap = new Map(
+      salesRank.map((row) => [row._id?.toString(), row.totalSold as number]),
+    );
+
+    const rankedProducts: any[] = [];
+    if (rankedIds.length > 0) {
+      const objectIds = rankedIds.map((id) => new Types.ObjectId(id));
+      const found = await this.productModel
+        .find({ _id: { $in: objectIds }, isDeleted: false, isActive: true })
+        .select('-variants.priceImport -variants.profit')
+        .exec();
+
+      const foundMap = new Map(found.map((p) => [p._id.toString(), p]));
+      for (const id of rankedIds) {
+        const doc = foundMap.get(id);
+        if (!doc) continue;
+        const enriched = await this.enrichPublicProduct(doc);
+        rankedProducts.push({
+          ...enriched,
+          totalSold: soldMap.get(id) ?? 0,
+        });
+      }
+    }
+
+    if (rankedProducts.length < safeLimit) {
+      const excludeIds = rankedProducts.map((p) => p._id);
+      const fillers = await this.productModel
+        .find({
+          _id: { $nin: excludeIds },
+          isDeleted: false,
+          isActive: true,
+        })
+        .select('-variants.priceImport -variants.profit')
+        .sort({ createdAt: -1 })
+        .limit(safeLimit - rankedProducts.length)
+        .exec();
+
+      for (const doc of fillers) {
+        const enriched = await this.enrichPublicProduct(doc);
+        rankedProducts.push({ ...enriched, totalSold: 0 });
+      }
+    }
+
+    return {
+      data: rankedProducts.slice(0, safeLimit),
+      total: rankedProducts.length,
+    };
+  }
+
+  async remove(id: string) {
+    if (!Types.ObjectId.isValid(id)) throw new BadRequestException('ID sản phẩm không hợp lệ');
+
+    const product = await this.productModel.findOne({ _id: id, isDeleted: false });
+    if (!product) throw new NotFoundException('Không tìm thấy sản phẩm');
+
+    const activeOrderCount = await this.orderModel.countDocuments({
+      status: { $nin: [OrderStatus.CANCELLED, OrderStatus.COMPLETED] },
+      'items.productId': new Types.ObjectId(id),
+    });
+    if (activeOrderCount > 0) {
+      throw new BadRequestException(
+        `Không thể xóa sản phẩm "${product.name}" vì còn ${activeOrderCount} đơn hàng đang xử lý.`,
       );
-  return updated!;
-}
+    }
+
+    await this.productModel.findByIdAndUpdate(id, { isDeleted: true });
+    return { message: 'Đã đưa sản phẩm vào thùng rác' };
+  }
+
+  async updateStatus(id: string, isActive: boolean): Promise<ProductDocument> {
+    if (!Types.ObjectId.isValid(id)) throw new BadRequestException('ID sản phẩm không hợp lệ');
+
+    const updated = await this.productModel.findByIdAndUpdate(
+      id,
+      { $set: { isActive } },
+      { new: true, runValidators: false },
+    );
+    if (!updated || updated.isDeleted) throw new NotFoundException('Không tìm thấy sản phẩm');
+    return updated;
+  }
+
+  async toggleStatus(id: string): Promise<ProductDocument> {
+    const product = await this.productModel.findOne({ _id: id, isDeleted: false });
+    if (!product) throw new NotFoundException('Không tìm thấy sản phẩm');
+    return this.updateStatus(id, !product.isActive);
+  }
+
   // ==== KHO HÀNG ====
 
   async holdStock(productId: string, variantName: string, quantity: number, session?: any): Promise<void> {

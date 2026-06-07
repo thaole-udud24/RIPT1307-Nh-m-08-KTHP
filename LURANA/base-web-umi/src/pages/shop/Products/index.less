@@ -5,6 +5,7 @@
 @text-gray: #6B7280;
 @border-color: #F3E5DF;
 @light-bg: #FAFAFA;
+@white: #ffffff;
 
 .shop2-page {
   background-color: #ffffff;
@@ -484,7 +485,7 @@
       border-radius: 20px;
       border: 1px solid @border-color;
       box-shadow: 0 8px 24px rgba(243, 229, 223, 0.3);
-      position: sticky; /* Giữ thanh sidebar đứng im khi cuộn */
+      position: sticky;
       top: 20px;
 
       .sidebar-main-title {
@@ -535,10 +536,149 @@
       }
     }
 
-    /* Hiệu ứng chọn (Active) mượt mà hơn */
     .active-card {
       border-color: @primary-color !important;
       box-shadow: 0 4px 20px rgba(255, 167, 138, 0.25) !important;
+    }
+  }
+
+  /* =========================================
+     8. Products listing area
+  ========================================= */
+  .shop-products-wrapper {
+    min-height: 420px;
+  }
+
+  .products-toolbar {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 20px;
+    margin-bottom: 24px;
+    padding: 20px 22px;
+    border: 1px solid @border-color;
+    border-radius: 18px;
+    background: linear-gradient(135deg, #fff 0%, @secondary-color 100%);
+    box-shadow: 0 4px 16px rgba(255, 167, 138, 0.08);
+  }
+
+  .products-toolbar__left {
+    flex-shrink: 0;
+  }
+
+  .products-toolbar__title {
+    margin: 0 0 4px;
+    color: @text-color;
+    font-size: 22px;
+    font-weight: 800;
+    letter-spacing: -0.02em;
+  }
+
+  .products-toolbar__subtitle {
+    margin: 0;
+    color: @text-gray;
+    font-size: 14px;
+
+    strong {
+      color: @primary-color;
+      font-weight: 700;
+    }
+  }
+
+  .products-toolbar__actions {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex: 1;
+    justify-content: flex-end;
+    flex-wrap: wrap;
+  }
+
+  .products-toolbar__search {
+    flex: 1;
+    min-width: 200px;
+    max-width: 320px;
+    height: 40px;
+    border-radius: 10px !important;
+    border-color: @border-color !important;
+
+    &:hover,
+    &:focus {
+      border-color: @primary-color !important;
+      box-shadow: 0 0 0 2px rgba(255, 167, 138, 0.15);
+    }
+
+    :global(.ant-input-prefix) {
+      color: @primary-color;
+    }
+  }
+
+  .products-toolbar__btn {
+    height: 40px;
+    border-radius: 10px;
+    font-weight: 600;
+    font-size: 14px;
+
+    &--search {
+      background: @primary-color;
+      border-color: @primary-color;
+
+      &:hover {
+        background: @primary-hover;
+        border-color: @primary-hover;
+      }
+    }
+
+    &--reload {
+      color: @text-color;
+      border-color: @border-color;
+      background: @white;
+
+      &:hover {
+        color: @primary-color;
+        border-color: @primary-color;
+      }
+    }
+  }
+
+  .filter-body--slider {
+    padding: 0 10px;
+  }
+
+  .price-range-labels {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 12px;
+    font-size: 13px;
+    color: @text-gray;
+    font-weight: 500;
+  }
+
+  .shop-loading-state,
+  .shop-empty-state {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 420px;
+    padding: 48px 24px;
+    border: 1px dashed @border-color;
+    border-radius: 24px;
+    background: linear-gradient(180deg, #fff 0%, @secondary-color 100%);
+
+    :global {
+      .ant-spin-dot-item {
+        background-color: @primary-color;
+      }
+
+      .ant-spin-text {
+        color: @text-gray;
+        margin-top: 12px;
+      }
+
+      .ant-empty-description {
+        color: @text-gray;
+        font-size: 15px;
+      }
     }
   }
 
@@ -548,10 +688,69 @@
     justify-content: center;
     align-items: center;
     gap: 15px;
-    
+
     .total-text {
       color: @text-gray;
       font-weight: 500;
+    }
+  }
+}
+
+@media (max-width: 992px) {
+  .shop2-page {
+    .shop2-main-layout .sidebar-filter-custom {
+      position: static;
+      margin-bottom: 28px;
+    }
+
+    .products-toolbar {
+      flex-direction: column;
+      align-items: stretch;
+    }
+
+    .products-toolbar__actions {
+      justify-content: stretch;
+    }
+
+    .products-toolbar__search {
+      max-width: none;
+      flex: 1 1 100%;
+    }
+  }
+}
+
+@media (max-width: 576px) {
+  .shop2-page {
+    .shop2-container {
+      padding: 0 16px;
+    }
+
+    .products-toolbar {
+      padding: 16px;
+      gap: 14px;
+    }
+
+    .products-toolbar__title {
+      font-size: 18px;
+    }
+
+    .products-toolbar__actions {
+      flex-direction: column;
+      align-items: stretch;
+    }
+
+    .products-toolbar__search {
+      min-width: 0;
+    }
+
+    .products-toolbar__btn {
+      width: 100%;
+    }
+
+    .shop-loading-state,
+    .shop-empty-state {
+      min-height: 320px;
+      border-radius: 18px;
     }
   }
 }

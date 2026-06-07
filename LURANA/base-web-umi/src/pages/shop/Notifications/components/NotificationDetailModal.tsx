@@ -32,6 +32,10 @@ const NotificationDetailModal: React.FC<NotificationDetailModalProps> = ({
 
   const handleActionClick = () => {
     onClose();
+    if (item.actionLink) {
+      history.push(item.actionLink);
+      return;
+    }
     if (item.category === 'ORDER') {
       history.push('/account?tab=ORDERS');
     } else if (item.category === 'PROMOTION') {

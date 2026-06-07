@@ -1,143 +1,287 @@
-import React, { useState } from 'react';
-import { Pagination, Select, message } from 'antd';
-import { HeartFilled, HeartOutlined, StarFilled } from '@ant-design/icons';
+import React, { useState, useEffect } from 'react';
+import { Pagination, Select } from 'antd';
+import {
+  HeartFilled,
+  HeartOutlined,
+  StarFilled,
+  LeftOutlined,
+  RightOutlined,
+  PictureOutlined,
+  ArrowRightOutlined,
+  InboxOutlined,
+  TagOutlined,
+} from '@ant-design/icons';
 import { history } from 'umi';
-import './ShopAllProducts.less'; 
+import { resolveMediaUrl } from '@/utils/apiUrl';
+import './ShopAllProducts.less';
 
-// ✅ Chỉ nhận data THẬT từ API được truyền xuống từ trang index.tsx
 interface ShopAllProductsProps {
   products: any[];
   pageSize?: number;
 }
 
-// Hàm lấy ảnh từ Object API trả về
-const FALLBACK_IMAGE = 'https://placehold.co/600x600/FFF8F6/FFA78A?text=No+Image';
-const getProductImage = (p: any) => {
-  if (p.mainImage) return p.mainImage;
-  if (p.images && p.images.length > 0) return p.images[0];
-  if (p.avatar_url) return p.avatar_url;
-  if (p.img) return p.img;
-  return FALLBACK_IMAGE;
+const GRID_SIZE = 9;
+
+const hasValidImage = (p: any) => {
+  const url = p.mainImage || p.images?.[0] || p.avatar_url || p.img;
+  return Boolean(url && typeof url === 'string' && url.trim());
 };
 
-// Hàm lấy giá từ Object API (Ưu tiên lấy giá Sell của Variant đầu tiên)
-const getProductPrice = (p: any) => {
-  if (p.variants && p.variants.length > 0) {
-    const price = p.variants[0].priceSell || p.variants[0].originalPrice || 0;
-    return price.toLocaleString('vi-VN') + 'đ';
-  }
-  if (typeof p.price === 'number') return p.price.toLocaleString('vi-VN') + 'đ';
-  return 'Liên hệ';
+const getProductImage = (p: any) => {
+  const raw = p.mainImage || p.images?.[0] || p.avatar_url || p.img || '';
+  return resolveMediaUrl(raw) || '';
+};
+
+const getProductPrices = (p: any) => {
+  const variant = p.variants?.[0];
+  const sell = variant?.priceSell ?? p.price ?? 0;
+  const original = variant?.originalPrice ?? 0;
+  const hasDiscount = original > sell && sell > 0;
+  const discountPercent = hasDiscount
+    ? Math.round(((original - sell) / original) * 100)
+    : 0;
+
+  return {
+    sell,
+    original,
+    hasDiscount,
+    discountPercent,
+    sellText: sell > 0 ? `${sell.toLocaleString('vi-VN')}đ` : 'Liên hệ',
+    originalText: original > 0 ? `${original.toLocaleString('vi-VN')}đ` : '',
+  };
 };
 
 const getProductId = (p: any) => p._id || p.id || '';
 
-// Nút thả tim (Tạm thời lưu State UI)
-const HeartButton: React.FC<{ productId: string }> = ({ productId }) => {
+const getCategoryName = (p: any) =>
+  p?.category?.name || p?.category || '';
+
+const getSkinTypeLabels = (p: any) => {
+  if (Array.isArray(p.skinTypes) && p.skinTypes.length > 0) {
+    return p.skinTypes.map((s: any) => s?.name || s).filter(Boolean).join(', ');
+  }
+  if (p?.skinType?.name) return p.skinType.name;
+  if (typeof p?.skinType === 'string') return p.skinType;
+  return '';
+};
+
+const getStockInfo = (p: any) => {
+  const variant = p.variants?.[0];
+  const stock = variant?.stockQty ?? 0;
+  if (stock <= 0) return { label: 'Hết hàng', tone: 'danger' as const };
+  if (stock <= (variant?.stockAlert ?? 5)) return { label: `Còn ${stock}`, tone: 'warning' as const };
+  return { label: 'Còn hàng', tone: 'success' as const };
+};
+
+const NoImagePlaceholder: React.FC<{ compact?: boolean }> = ({ compact }) => (
+  <div className={`no-img-placeholder ${compact ? 'no-img-placeholder--compact' : ''}`}>
+    <PictureOutlined />
+    <span>NO IMG</span>
+  </div>
+);
+
+const HeartButton: React.FC = () => {
   const [active, setActive] = useState(false);
-  
+
   const handleClick = (e: React.MouseEvent) => {
-    e.stopPropagation(); // Ngăn sự kiện click lan ra ngoài thẻ Card
-    // TODO: Gọi API thêm vào wishlist thật ở đây
+    e.stopPropagation();
     setActive(!active);
   };
 
   return (
-    <div className="heart-icon" onClick={handleClick}>
-      {active ? <HeartFilled className="active-heart" /> : <HeartOutlined />}
-    </div>
+    <button
+      type="button"
+      className={`lunaria-card__wishlist ${active ? 'is-active' : ''}`}
+      onClick={handleClick}
+      aria-label="Yêu thích"
+    >
+      {active ? <HeartFilled /> : <HeartOutlined />}
+    </button>
   );
 };
 
-const ShopAllProducts: React.FC<ShopAllProductsProps> = ({ products = [], pageSize = 12 }) => {
+const ProductImage: React.FC<{ product: any }> = ({ product }) => {
+  const [broken, setBroken] = useState(false);
+  const src = getProductImage(product);
+  const showPlaceholder = !hasValidImage(product) || broken || !src;
+
+  if (showPlaceholder) {
+    return <NoImagePlaceholder />;
+  }
+
+  return (
+    <img
+      src={src}
+      alt={product.name}
+      loading="lazy"
+      onError={() => setBroken(true)}
+    />
+  );
+};
+
+const ShopAllProducts: React.FC<ShopAllProductsProps> = ({
+  products = [],
+  pageSize = GRID_SIZE,
+}) => {
   const [currentPage, setCurrentPage] = useState(1);
   const [limit, setLimit] = useState(pageSize);
 
-  // Xử lý phân trang bằng mảng data thật
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [products.length, limit]);
+
   const startIdx = (currentPage - 1) * limit;
   const pageProducts = products.slice(startIdx, startIdx + limit);
+  const emptySlotsCount = Math.max(0, limit - pageProducts.length);
 
-  // Tính toán số lượng ô trống cần bù vào để luôn đủ bố cục
-  const emptyBoxesCount = limit - pageProducts.length;
-  const emptyBoxes = Array.from({ length: emptyBoxesCount > 0 ? emptyBoxesCount : 0 });
+  const goToDetail = (pid: string) => {
+    if (pid) history.push(`/products/${pid}`);
+  };
 
   return (
     <div className="shop-all-products">
-      {/* KHU VỰC GRID SẢN PHẨM (DÙNG CSS GRID THUẦN) */}
-      <div className="custom-product-grid">
-        
-        {/* Render sản phẩm có thật */}
+      <div className="lunaria-product-grid">
         {pageProducts.map((p) => {
           const pid = getProductId(p);
-          
+          const prices = getProductPrices(p);
+          const categoryName = getCategoryName(p);
+          const skinLabels = getSkinTypeLabels(p);
+          const stockInfo = getStockInfo(p);
+          const variant = p.variants?.[0];
+          const isActive = p.isActive !== false;
+
           return (
-            <div 
+            <article
               key={pid}
-              className="shop2-product-card"
-              onClick={() => history.push(`/products/${pid}`)}
+              className="lunaria-card"
+              onClick={() => goToDetail(pid)}
+              role="button"
+              tabIndex={0}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') goToDetail(pid);
+              }}
             >
-              <div className="card-top">
-                <HeartButton productId={pid} />
-                <div className="rating-badge">
-                  <StarFilled /> <span>{p.rating || '5.0'}</span>
+              <div className="lunaria-card__media">
+                <span className={`lunaria-card__status lunaria-card__status--${isActive ? 'active' : 'inactive'}`}>
+                  {isActive ? 'ĐANG BÁN' : 'NGỪNG BÁN'}
+                </span>
+                <HeartButton />
+                <ProductImage product={p} />
+                {categoryName && (
+                  <span className="lunaria-card__category-tag">{categoryName}</span>
+                )}
+                {prices.hasDiscount && (
+                  <span className="lunaria-card__discount">-{prices.discountPercent}%</span>
+                )}
+              </div>
+
+              <div className="lunaria-card__content">
+                <div className="lunaria-card__meta-row">
+                  <div className="lunaria-card__brand">
+                    <span className="lunaria-card__sku">{p.sku || 'LUNARIA'}</span>
+                  </div>
+                  <span className="lunaria-card__price-top">{prices.sellText}</span>
+                </div>
+
+                <h3 className="lunaria-card__title">{p.name}</h3>
+
+                <div className="lunaria-card__details">
+                  {variant?.variantName && (
+                    <span className="lunaria-card__detail-item">
+                      <InboxOutlined /> {variant.variantName}
+                    </span>
+                  )}
+                  <span className={`lunaria-card__detail-item lunaria-card__detail-item--${stockInfo.tone}`}>
+                    <TagOutlined /> {stockInfo.label}
+                  </span>
+                  {skinLabels && (
+                    <span className="lunaria-card__detail-item lunaria-card__detail-item--skin">
+                      {skinLabels}
+                    </span>
+                  )}
+                </div>
+
+                <div className="lunaria-card__footer">
+                  <div className="lunaria-card__rating">
+                    <StarFilled />
+                    <span>{p.rating || '5.0'}</span>
+                  </div>
+                  <button
+                    type="button"
+                    className="lunaria-card__cta"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      goToDetail(pid);
+                    }}
+                  >
+                    Xem chi tiết <ArrowRightOutlined />
+                  </button>
                 </div>
               </div>
-              
-              <div className="card-img-container">
-                <img 
-                  src={getProductImage(p)} 
-                  alt={p.name} 
-                  onError={(e: any) => { e.target.onerror = null; e.target.src = FALLBACK_IMAGE; }}
-                />
-              </div>
-              
-              <div className="card-info">
-                <h4 className="prod-name">{p.name}</h4>
-                <div className="prod-price">
-                  <span>{getProductPrice(p)}</span>
-                </div>
-              </div>
-            </div>
+            </article>
           );
         })}
 
-        {/* Render ô trống bù vào cho đủ lưới 4 cột */}
-        {emptyBoxes.map((_, index) => (
-          <div key={`empty-${index}`} className="shop2-product-card empty-card">
-            <div className="empty-content"></div>
+        {Array.from({ length: emptySlotsCount }).map((_, index) => (
+          <div key={`empty-${index}`} className="lunaria-card lunaria-card--empty">
+            <div className="lunaria-card__media lunaria-card__media--empty">
+              <NoImagePlaceholder compact />
+            </div>
+            <div className="lunaria-card__content lunaria-card__content--empty">
+              <div className="empty-slot-line" />
+              <div className="empty-slot-line empty-slot-line--short" />
+              <div className="empty-slot-line empty-slot-line--btn" />
+            </div>
           </div>
         ))}
       </div>
 
-      {/* KHU VỰC PHÂN TRANG */}
       {products.length > 0 && (
-        <div className="custom-pagination">
-          <span className="total-text">Tổng số: {products.length} sản phẩm</span>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-            <Pagination 
-              simple 
-              current={currentPage} 
-              total={products.length} 
+        <div className="lunaria-pagination">
+          <div className="lunaria-pagination__summary">
+            <span>Tổng số: <strong>{products.length}</strong></span>
+          </div>
+
+          <div className="lunaria-pagination__nav">
+            <Pagination
+              current={currentPage}
+              total={products.length}
               pageSize={limit}
               onChange={(page) => setCurrentPage(page)}
               showSizeChanger={false}
               itemRender={(page, type, originalElement) => {
-                if (type === 'prev') return <a>&lt;</a>;
-                if (type === 'next') return <a>&gt;</a>;
+                if (type === 'prev') {
+                  return (
+                    <button type="button" className="lunaria-pagination__arrow" aria-label="Trang trước">
+                      <LeftOutlined />
+                    </button>
+                  );
+                }
+                if (type === 'next') {
+                  return (
+                    <button type="button" className="lunaria-pagination__arrow" aria-label="Trang sau">
+                      <RightOutlined />
+                    </button>
+                  );
+                }
                 return originalElement;
               }}
             />
-            <Select 
-              value={limit.toString()} 
-              onChange={(val) => { setLimit(parseInt(val)); setCurrentPage(1); }} 
-              bordered={false} 
-              className="per-page-select"
-            >
-              <Select.Option value="8">8 / trang</Select.Option>
-              <Select.Option value="12">12 / trang</Select.Option>
-              <Select.Option value="24">24 / trang</Select.Option>
-            </Select>
           </div>
+
+          <Select
+            value={limit.toString()}
+            onChange={(val) => {
+              setLimit(parseInt(val, 10));
+              setCurrentPage(1);
+            }}
+            className="lunaria-pagination__size"
+            dropdownClassName="lunaria-pagination__dropdown"
+          >
+            <Select.Option value="9">9 / trang</Select.Option>
+            <Select.Option value="18">18 / trang</Select.Option>
+            <Select.Option value="27">27 / trang</Select.Option>
+          </Select>
         </div>
       )}
     </div>

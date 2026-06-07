@@ -1,10 +1,13 @@
-import React, { useState, useEffect } from 'react';
-import { Row, Col, Checkbox, Slider, Spin, Empty } from 'antd';
+import React, { useState, useEffect, useCallback } from 'react';
+import { Row, Col, Checkbox, Slider, Spin, Empty, Input, Button } from 'antd';
 import { useLocation, history } from 'umi';
-import { SearchOutlined, CloseCircleOutlined } from '@ant-design/icons';
-import CategoryTabs from './components/CategoryTabs';
+import {
+  SearchOutlined,
+  CloseCircleOutlined,
+  ReloadOutlined,
+} from '@ant-design/icons';
 import ShopHeroBanner from './components/ShopHeroBanner';
-import ShopAllProducts from './components/ShopAllProducts'; // ✅ Gọi đúng component đã fix CSS Grid
+import ShopAllProducts from './components/ShopAllProducts';
 import ShopGallery from './components/ShopGallery';
 import ShopNewsletter from './components/ShopNewsletter';
 import { getProducts } from '@/services/SanPham/products.customer.api';
@@ -15,9 +18,9 @@ import './index.less';
 
 const Products: React.FC = () => {
   const location = useLocation();
-  const [activeTab, setActiveTab] = useState('Tất cả');
-  const [searchQuery, setSearchQuery] = useState('');
+  const [searchKeyword, setSearchKeyword] = useState('');
   const [loading, setLoading] = useState(false);
+  const [reloadKey, setReloadKey] = useState(0);
 
   const [allProducts, setAllProducts] = useState<any[]>([]);
   const [dynamicCategories, setDynamicCategories] = useState<any[]>([]);
@@ -27,45 +30,69 @@ const Products: React.FC = () => {
   const [selectedSkinTypes, setSelectedSkinTypes] = useState<string[]>([]);
   const [priceRange, setPriceRange] = useState<[number, number]>([0, 2000000]);
 
-  useEffect(() => {
-    const fetchMasterData = async () => {
-      setLoading(true);
-      try {
-        const [prodRes, catRes, skinRes] = await Promise.all([
-          getProducts({ limit: 100 }),
-          getCategories(),   // ← public route
-          getSkinTypes(),    // ← public route
-        ]);
-        setAllProducts(prodRes?.data || prodRes?.items || prodRes || []);
-        setDynamicCategories(catRes?.data || catRes?.items || (Array.isArray(catRes) ? catRes : []));
-        setDynamicSkinTypes(skinRes?.data || skinRes?.items || (Array.isArray(skinRes) ? skinRes : []));
-      } catch (error) {
-        console.error('Lỗi khi tải dữ liệu từ API:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchMasterData();
+  const fetchMasterData = useCallback(async () => {
+    setLoading(true);
+    try {
+      const [prodRes, catRes, skinRes] = await Promise.all([
+        getProducts({ limit: 100 }),
+        getCategories(),
+        getSkinTypes(),
+      ]);
+      setAllProducts(prodRes?.data || prodRes?.items || prodRes || []);
+      setDynamicCategories(catRes?.data || catRes?.items || (Array.isArray(catRes) ? catRes : []));
+      setDynamicSkinTypes(skinRes?.data || skinRes?.items || (Array.isArray(skinRes) ? skinRes : []));
+    } catch (error) {
+      console.error('Lỗi khi tải dữ liệu từ API:', error);
+    } finally {
+      setLoading(false);
+    }
   }, []);
+
+  useEffect(() => {
+    fetchMasterData();
+  }, [fetchMasterData]);
 
   useEffect(() => {
     const params = new URLSearchParams(location.search);
     const q = params.get('q') || '';
-    setSearchQuery(q);
-  }, [location.search]);
+    setSearchKeyword(q);
+
+    const tab = params.get('tab');
+    if (tab) {
+      const match = dynamicCategories.find(
+        (c) =>
+          (c.name || c.title || '').toLowerCase() === tab.toLowerCase() ||
+          (c.slug || c.code || '').toLowerCase() === tab.toLowerCase(),
+      );
+      if (match) {
+        setSelectedCategories([(match.name || match.title || tab).toLowerCase()]);
+      }
+    }
+  }, [location.search, dynamicCategories]);
+
+  const handleReload = () => {
+    setReloadKey((k) => k + 1);
+    fetchMasterData();
+  };
+
+  const handleSearch = () => {
+    const trimmed = searchKeyword.trim();
+    if (trimmed) {
+      history.push(`/products?q=${encodeURIComponent(trimmed)}`);
+    } else {
+      history.push('/products');
+    }
+  };
 
   const finalFilteredProducts = allProducts.filter((p) => {
-    // 1. Search
-    const matchSearch = !searchQuery ||
-      (p.name && p.name.toLowerCase().includes(searchQuery.toLowerCase()));
+    const matchSearch = !searchKeyword ||
+      (p.name && p.name.toLowerCase().includes(searchKeyword.toLowerCase())) ||
+      (p.sku && p.sku.toLowerCase().includes(searchKeyword.toLowerCase()));
 
-    // 2. Tab & Danh mục
     const pCategoryName = (p?.category?.name || p?.category || '').toLowerCase();
-    const matchTab = activeTab === 'Tất cả' || pCategoryName.includes(activeTab.toLowerCase());
     const matchSidebarCat = selectedCategories.length === 0 ||
       selectedCategories.some(c => pCategoryName.includes(c.toLowerCase()));
 
-    // 3. Loại da
     let pSkinNames = '';
     if (Array.isArray(p.skinTypes)) {
       pSkinNames = p.skinTypes.map((s: any) => s?.name || s).join(' ').toLowerCase();
@@ -75,53 +102,55 @@ const Products: React.FC = () => {
     const matchSkin = selectedSkinTypes.length === 0 ||
       selectedSkinTypes.some(s => pSkinNames.includes(s.toLowerCase()));
 
-    // 4. Giá — lấy từ variants[0].priceSell thay vì p.price
     const pPrice = p.variants?.[0]?.priceSell
       || p.variants?.[0]?.originalPrice
       || p.price
       || 0;
     const matchPrice = pPrice >= priceRange[0] && pPrice <= priceRange[1];
 
-    return matchSearch && matchTab && matchSidebarCat && matchSkin && matchPrice;
+    return matchSearch && matchSidebarCat && matchSkin && matchPrice;
   });
-
-  const tabList = ['Tất cả', ...dynamicCategories.map(c => c.name || c.title)];
 
   return (
     <div className="shop2-page">
       <ShopHeroBanner />
 
-      {searchQuery && (
+      {searchKeyword && (
         <div className="search-keyword-bar">
           <div className="search-inner-info">
             <SearchOutlined />
-            <span>Kết quả tìm kiếm cho: <strong>"{searchQuery}"</strong></span>
+            <span>Kết quả tìm kiếm cho: <strong>&quot;{searchKeyword}&quot;</strong></span>
           </div>
-          <button className="clear-search-btn" onClick={() => { setSearchQuery(''); history.push('/products'); }}>
+          <button
+            type="button"
+            className="clear-search-btn"
+            onClick={() => { setSearchKeyword(''); history.push('/products'); }}
+          >
             <CloseCircleOutlined /> Xóa tìm kiếm
           </button>
         </div>
       )}
 
-      <CategoryTabs tabs={tabList} activeTab={activeTab} onTabChange={setActiveTab} />
-
       <div className="shop2-container shop2-main-layout">
-        <Row gutter={40} align="top">
+        <Row gutter={[32, 32]} align="top">
           <Col xs={24} lg={6}>
             <div className="sidebar-filter-custom">
               <div className="sidebar-main-title">Bộ lọc sản phẩm</div>
 
               <div className="filter-block">
                 <div className="filter-header">Khoảng giá (VND)</div>
-                <div className="filter-body" style={{ padding: '0 10px' }}>
+                <div className="filter-body filter-body--slider">
                   <Slider
-                    range min={0} max={3000000} step={50000}
+                    range
+                    min={0}
+                    max={3000000}
+                    step={50000}
                     value={priceRange}
                     onChange={(val) => setPriceRange(val as [number, number])}
                     trackStyle={[{ backgroundColor: '#FFA78A' }]}
                     handleStyle={[{ borderColor: '#FFA78A' }, { borderColor: '#FFA78A' }]}
                   />
-                  <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 12 }}>
+                  <div className="price-range-labels">
                     <span>{priceRange[0].toLocaleString('vi-VN')}đ</span>
                     <span>{priceRange[1].toLocaleString('vi-VN')}đ</span>
                   </div>
@@ -169,26 +198,59 @@ const Products: React.FC = () => {
           </Col>
 
           <Col xs={24} lg={18}>
-            {loading ? (
-              <div className="shop-loading-state">
-                <Spin size="large" tip="Đang tải dữ liệu Lunaria..." />
+            <div className="shop-products-wrapper">
+              <div className="products-toolbar">
+                <div className="products-toolbar__left">
+                  <h2 className="products-toolbar__title">Danh sách sản phẩm</h2>
+                  <p className="products-toolbar__subtitle">
+                    Tìm thấy <strong>{finalFilteredProducts.length}</strong> sản phẩm
+                  </p>
+                </div>
+                <div className="products-toolbar__actions">
+                  <Input
+                    className="products-toolbar__search"
+                    placeholder="Tìm theo tên, mã SKU..."
+                    prefix={<SearchOutlined />}
+                    value={searchKeyword}
+                    onChange={(e) => setSearchKeyword(e.target.value)}
+                    onPressEnter={handleSearch}
+                    allowClear
+                  />
+                  <Button
+                    type="primary"
+                    icon={<SearchOutlined />}
+                    className="products-toolbar__btn products-toolbar__btn--search"
+                    onClick={handleSearch}
+                  >
+                    Tìm kiếm
+                  </Button>
+                  <Button
+                    icon={<ReloadOutlined spin={loading} />}
+                    className="products-toolbar__btn products-toolbar__btn--reload"
+                    onClick={handleReload}
+                    loading={loading}
+                  >
+                    Tải lại
+                  </Button>
+                </div>
               </div>
-            ) : finalFilteredProducts.length === 0 ? (
-              <div className="shop-empty-state">
-                <Empty description="Không tìm thấy sản phẩm nào phù hợp với bộ lọc." />
-              </div>
-            ) : (
-              // ✅ Đã thay thế thành phần hiển thị danh sách sản phẩm chuẩn
-              <div className="shop-products-wrapper">
-                <h2 style={{ fontSize: '24px', fontWeight: 'bold', marginBottom: '24px', color: '#333' }}>
-                  {activeTab === 'Tất cả' ? 'Tất cả sản phẩm' : `Sản phẩm ${activeTab}`}
-                </h2>
+
+              {loading ? (
+                <div className="shop-loading-state">
+                  <Spin size="large" tip="Đang tải dữ liệu Lunaria..." />
+                </div>
+              ) : finalFilteredProducts.length === 0 ? (
+                <div className="shop-empty-state">
+                  <Empty description="Không tìm thấy sản phẩm nào phù hợp với bộ lọc." />
+                </div>
+              ) : (
                 <ShopAllProducts
+                  key={reloadKey}
                   products={finalFilteredProducts}
-                  pageSize={12}
+                  pageSize={9}
                 />
-              </div>
-            )}
+              )}
+            </div>
           </Col>
         </Row>
       </div>

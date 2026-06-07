@@ -1,4 +1,4 @@
-import { request } from 'umi';
+import request from '@/services/base/request';
 import type { CreatePromotionPayload } from '@/types/promotion';
 
 export async function getPromotions(params?: any) {

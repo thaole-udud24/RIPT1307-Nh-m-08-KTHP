@@ -11,12 +11,17 @@ export default [
         component: './auth/Login', 
         layout: false 
       },
-      { 
-        path: '/auth/register', 
-        component: './auth/Register', 
-        layout: false 
+      {
+        path: '/auth/register',
+        component: './auth/Register',
+        layout: false,
       },
-      { 
+      {
+        path: '/auth/verify-email',
+        component: './auth/VerifyEmail',
+        layout: false,
+      },
+      {
         path: '/auth/forgot-password', 
         component: './auth/ForgotPassword', 
         layout: false 
@@ -99,6 +104,10 @@ export default [
         path: '/admin/settings',
         component: '@/pages/admin/Settings', 
       },
+      {
+        path: '/admin/notifications',
+        component: '@/pages/admin/Notifications',
+      },
     ],
   },
 
@@ -143,6 +152,11 @@ export default [
         path: '/contact', 
         component: '@/pages/shop/Contact' 
       },
+      { path: '/policy/shipping', component: '@/pages/shop/Policy' },
+      { path: '/policy/return', component: '@/pages/shop/Policy' },
+      { path: '/policy/privacy', component: '@/pages/shop/Policy' },
+      { path: '/faq', component: '@/pages/shop/Policy' },
+      { path: '/loyalty', component: '@/pages/shop/Policy' },
       { 
         path: '/cart', 
         component: '@/pages/shop/Cart' 
@@ -175,7 +189,7 @@ export default [
   // ==========================================
   { 
     path: '*', 
-    component: './404',
+    component: './exception/404',
     layout: false
   },
 ];

@@ -1,7 +1,8 @@
-export type OrderStatus = 'ALL' | 'PENDING' | 'PROCESSING' | 'SHIPPING' | 'COMPLETED' | 'CANCELLED';
+export type OrderStatus = 'ALL' | 'PENDING' | 'CONFIRMED' | 'PROCESSING' | 'COMPLETED' | 'CANCELLED';
 
 export interface OrderItem {
   id: string;
+  productId?: string;
   name: string;
   image: string;
   price: number;
@@ -20,7 +21,7 @@ export interface OrderData {
   id: string;
   orderCode: string;
   date: string;
-  status: 'PENDING' | 'PROCESSING' | 'SHIPPING' | 'COMPLETED' | 'CANCELLED';
+  status: 'PENDING' | 'CONFIRMED' | 'PROCESSING' | 'COMPLETED' | 'CANCELLED';
   items: OrderItem[];
   totalAmount: number;
   shippingFee: number;

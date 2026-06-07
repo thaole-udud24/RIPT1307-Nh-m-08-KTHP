@@ -778,3 +778,39 @@
     }
   }
 }
+
+@media (max-width: 768px) {
+  .notifications-page {
+    padding: 24px 0 48px;
+
+    .notifications-container { padding: 0 16px; }
+
+    .page-header {
+      margin-bottom: 28px;
+
+      h1 { font-size: 1.65rem; }
+      p { font-size: 14px; }
+    }
+
+    .notification-filter-bar {
+      overflow-x: auto;
+      flex-wrap: nowrap;
+      -webkit-overflow-scrolling: touch;
+    }
+  }
+}
+
+@media (max-width: 576px) {
+  .notifications-page {
+    .notification-item-card {
+      padding: 16px;
+
+      .card-actions {
+        flex-direction: column;
+        align-items: stretch;
+
+        button { width: 100%; }
+      }
+    }
+  }
+}

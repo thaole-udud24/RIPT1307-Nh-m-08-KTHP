@@ -1,4 +1,4 @@
-import { request } from 'umi';
+import request from '@/services/base/request';
 import type { CreateVoucherPayload } from '@/types/voucher';
 
 export async function getVouchers(params?: any) {
